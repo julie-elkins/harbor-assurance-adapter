@@ -140,6 +140,40 @@ class AdapterTests(unittest.TestCase):
             index = command.index("--agent-timeout-multiplier")
             self.assertEqual(command[index + 1], "4")
 
+    def test_config_rejects_literal_provider_secret_arguments(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "secret.toml"
+            path.write_text(
+                """
+[run]
+benchmark = "terminal-bench"
+benchmark_revision = "2.0"
+agent = "codex"
+agent_revision = "0.167.0"
+model = "openai/gpt-5.5"
+provider = "openai"
+harness = "harbor"
+harness_revision = "v0.9.0"
+pass_env = ["OPENAI_API_KEY"]
+
+[budget]
+max_total_cost_usd = 1.0
+estimated_cost_per_task_usd = 1.0
+task_count = 1
+attempts = 1
+timeout_seconds = 60
+max_output_bytes = 1024
+stop_condition = "stop-after-one-task"
+
+[command]
+argv = ["harbor", "run", "--env", "OPENAI_API_KEY=synthetic-secret"]
+""".strip(),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "literal OPENAI_API_KEY value"):
+                load_config(path)
+
     def test_claude_code_config_is_pinned_and_budgeted(self) -> None:
         repository = Path(__file__).parents[1]
         run_config = load_config(repository / "config" / "claude-code-live-2.0.toml")
