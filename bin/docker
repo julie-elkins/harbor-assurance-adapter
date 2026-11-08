@@ -5,10 +5,63 @@
 # Harbor uses Docker Compose flags that Finch's Compose command does not
 # implement: "--rmi all" during cleanup and "--wait" during startup. Remove
 # exactly those flags and preserve every other argument.
+temp_root=/private/tmp
+[ -d "$temp_root" ] || temp_root=${TMPDIR:-/tmp}
+secret_env_file=
+
+cleanup_secret_env_file() {
+    if [ -n "$secret_env_file" ]; then
+        rm -f "$secret_env_file"
+    fi
+}
+
+trap cleanup_secret_env_file EXIT
+trap 'cleanup_secret_env_file; exit 129' HUP
+trap 'cleanup_secret_env_file; exit 130' INT
+trap 'cleanup_secret_env_file; exit 143' TERM
+
+is_secret_env_name() {
+    case "$1" in
+        ANTHROPIC_API_KEY|OPENAI_API_KEY)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+write_secret_env() {
+    secret_name=$1
+    secret_value=$2
+    newline='
+'
+    carriage_return=$(printf '\r')
+    case "$secret_value" in
+        *"$newline"*|*"$carriage_return"*)
+            return 2
+            ;;
+    esac
+    if [ -z "$secret_env_file" ]; then
+        secret_env_file=$(mktemp "$temp_root/harbor-finch-secrets.XXXXXX") || return 1
+        chmod 600 "$secret_env_file" || return 1
+    fi
+    (umask 077 && printf '%s=%s\n' "$secret_name" "$secret_value" >> "$secret_env_file")
+}
+
+record_secret_assignment() {
+    secret_assignment=$1
+    secret_name=${secret_assignment%%=*}
+    if ! is_secret_env_name "$secret_name"; then
+        return 1
+    fi
+    secret_value=${secret_assignment#*=}
+    write_secret_env "$secret_name" "$secret_value"
+}
+
 if [ "$1" = "compose" ]; then
     override_file=
     prebuilt_image=
-    secret_env_file=
     compose_subcommand=
     if [ -n "${PREBUILT_IMAGE_NAME:-}" ]; then
         case "$PREBUILT_IMAGE_NAME" in
@@ -19,13 +72,9 @@ if [ "$1" = "compose" ]; then
                 ;;
         esac
     fi
-    temp_root=/private/tmp
-    [ -d "$temp_root" ] || temp_root=${TMPDIR:-/tmp}
-    if [ -n "$prebuilt_image" ] || [ -n "${ANTHROPIC_API_KEY:-}" ]; then
-        if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
-            secret_env_file=$temp_root/harbor-finch-anthropic.env
-            (umask 077 && printf '%s\n' "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" > "$secret_env_file")
-        fi
+    if [ -n "$prebuilt_image" ] ||
+        [ -n "${ANTHROPIC_API_KEY:-}" ] ||
+        [ -n "${OPENAI_API_KEY:-}" ]; then
         override_file=$(mktemp "$temp_root/harbor-finch-prebuilt.XXXXXX")
         {
             printf '%s\n' "services:" "  main:"
@@ -109,32 +158,18 @@ echo $encoded_command | base64 -d | bash"
         if { [ "$1" = "-e" ] || [ "$1" = "--env" ]; } && [ "$#" -gt 1 ]; then
             env_assignment=$2
             env_name=${env_assignment%%=*}
-            case "$env_name" in
-                ANTHROPIC_API_KEY)
-                    # The override loads this variable from a protected
-                    # temporary env file for direct Finch exec. Do not pass
-                    # its value through Compose exec, where it becomes a
-                    # process argument.
-                    if [ -z "$secret_env_file" ]; then
-                        secret_env_file=$temp_root/harbor-finch-anthropic.env
-                        env_value=${env_assignment#*=}
-                        (umask 077 && printf '%s\n' "ANTHROPIC_API_KEY=$env_value" > "$secret_env_file")
-                    fi
-                    shift 2
-                    continue
-                    ;;
-            esac
+            if [ "$env_assignment" != "$env_name" ] &&
+                record_secret_assignment "$env_assignment"; then
+                shift 2
+                continue
+            fi
         fi
         case "$1" in
             -e=*|--env=*)
                 env_assignment=${1#*=}
                 env_name=${env_assignment%%=*}
-                if [ "$env_name" = "ANTHROPIC_API_KEY" ]; then
-                    if [ -z "$secret_env_file" ]; then
-                        secret_env_file=$temp_root/harbor-finch-anthropic.env
-                        env_value=${env_assignment#*=}
-                        (umask 077 && printf '%s\n' "ANTHROPIC_API_KEY=$env_value" > "$secret_env_file")
-                    fi
+                if [ "$env_assignment" != "$env_name" ] &&
+                    record_secret_assignment "$env_assignment"; then
                     shift
                     continue
                 fi
@@ -194,7 +229,8 @@ $1"
                     fi
                     env_assignment=$2
                     env_name=${env_assignment%%=*}
-                    if [ "$env_name" = "ANTHROPIC_API_KEY" ]; then
+                    if [ "$env_assignment" != "$env_name" ] &&
+                        record_secret_assignment "$env_assignment"; then
                         shift 2
                         continue
                     fi
@@ -206,7 +242,8 @@ $2"
                 -e=*|--env=*)
                     env_assignment=${1#*=}
                     env_name=${env_assignment%%=*}
-                    if [ "$env_name" = "ANTHROPIC_API_KEY" ]; then
+                    if [ "$env_assignment" != "$env_name" ] &&
+                        record_secret_assignment "$env_assignment"; then
                         shift
                         continue
                     fi
@@ -245,7 +282,6 @@ $exec_arg"
             IFS=$old_ifs
             finch exec --env-file "$secret_env_file" "$@"
             status=$?
-            rm -f "$secret_env_file"
             exit "$status"
         fi
     fi
@@ -254,10 +290,56 @@ $exec_arg"
     # can still read it; the OS cleans temporary files independently.
     finch compose "$@"
     status=$?
-    if [ "$compose_subcommand" = "down" ] && [ -n "$secret_env_file" ]; then
-        rm -f "$secret_env_file"
-    fi
     exit "$status"
 fi
+
+case "$1" in
+    create|exec|run)
+        direct_subcommand=$1
+        shift
+        direct_args=
+        while [ "$#" -gt 0 ]; do
+            if { [ "$1" = "-e" ] || [ "$1" = "--env" ]; } && [ "$#" -gt 1 ]; then
+                env_assignment=$2
+                env_name=${env_assignment%%=*}
+                if [ "$env_assignment" != "$env_name" ] &&
+                    record_secret_assignment "$env_assignment"; then
+                    shift 2
+                    continue
+                fi
+            fi
+            case "$1" in
+                -e=*|--env=*)
+                    env_assignment=${1#*=}
+                    env_name=${env_assignment%%=*}
+                    if [ "$env_assignment" != "$env_name" ] &&
+                        record_secret_assignment "$env_assignment"; then
+                        shift
+                        continue
+                    fi
+                    ;;
+            esac
+            direct_args="$direct_args
+$1"
+            shift
+        done
+        set --
+        old_ifs=$IFS
+        IFS='
+'
+        for arg in $direct_args; do
+            [ -n "$arg" ] && set -- "$@" "$arg"
+        done
+        IFS=$old_ifs
+        if [ -n "$secret_env_file" ]; then
+            finch "$direct_subcommand" --env-file "$secret_env_file" "$@"
+            status=$?
+            exit "$status"
+        fi
+        finch "$direct_subcommand" "$@"
+        status=$?
+        exit "$status"
+        ;;
+esac
 
 exec finch "$@"

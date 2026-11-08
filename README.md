@@ -101,11 +101,19 @@ archives, so the shim uses Debian's matching archive only when
 `bullseye-security` is present. It does not add packages or change the task
 image.
 
-For the Anthropic secret, the shim writes a user-readable-only temporary
-`env_file` and uses Finch's direct `exec --env-file` path for agent commands.
-This keeps the value out of the Finch process command line, where local process
-inspection tools could otherwise see it. Other Harbor execution variables remain
-on the direct exec command because they contain control flags, not credentials.
+For provider secrets, the shim writes a user-readable-only temporary `env_file`
+and uses Finch's direct `exec --env-file` path for agent commands. This applies
+to both `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`, including direct
+Docker-compatible `exec`, `run`, and `create` paths. The value therefore stays
+out of the Finch process command line, where local process inspection tools
+could otherwise see it. Other Harbor execution variables remain on the direct
+exec command because they contain control flags, not credentials.
+
+The adapter also rejects a configuration that embeds a literal provider secret
+in its command argument vector, called `argv` (the process-visible argument
+list). Credentials must arrive through the named `pass_env` allow-list instead.
+The shim removes secret-valued environment assignments before launching Finch,
+creates a protected temporary file, and deletes it when the Finch process exits.
 
 The selected model provider also needs a locally configured credential. Do not put
 the credential in this repository or send it in chat. The Harbor process receives

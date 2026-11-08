@@ -9,10 +9,9 @@ from pathlib import Path
 
 
 class DockerShimTests(unittest.TestCase):
-    def test_anthropic_key_is_not_reintroduced_into_finch_exec_args(self) -> None:
+    def test_provider_keys_are_not_reintroduced_into_finch_exec_args(self) -> None:
         repository = Path(__file__).parents[1]
         shim = repository / "bin" / "docker"
-        secret = "synthetic-test-token"
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -28,22 +27,72 @@ class DockerShimTests(unittest.TestCase):
             fake_finch.chmod(0o700)
 
             for environment_flag in ("-e", "--env"):
-                with self.subTest(environment_flag=environment_flag):
-                    if captured_args.exists():
-                        captured_args.unlink()
-                    environment = os.environ.copy()
-                    environment["PATH"] = f"{fake_bin}:{environment['PATH']}"
-                    environment["FAKE_FINCH_ARGS"] = str(captured_args)
+                for secret_name in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY"):
+                    with self.subTest(
+                        environment_flag=environment_flag,
+                        secret_name=secret_name,
+                    ):
+                        if captured_args.exists():
+                            captured_args.unlink()
+                        secret = f"synthetic-{secret_name.lower()}"
+                        environment = os.environ.copy()
+                        environment["PATH"] = f"{fake_bin}:{environment['PATH']}"
+                        environment["FAKE_FINCH_ARGS"] = str(captured_args)
+                        result = subprocess.run(
+                            (
+                                str(shim),
+                                "compose",
+                                "-p",
+                                "harbor",
+                                "exec",
+                                "-T",
+                                environment_flag,
+                                f"{secret_name}={secret}",
+                                "main",
+                                "true",
+                            ),
+                            env=environment,
+                            capture_output=True,
+                            text=True,
+                            check=False,
+                        )
+
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        self.assertTrue(captured_args.exists())
+                        self.assertNotIn(
+                            secret,
+                            captured_args.read_text(encoding="utf-8"),
+                        )
+
+    def test_direct_exec_and_run_keep_provider_keys_out_of_finch_args(self) -> None:
+        repository = Path(__file__).parents[1]
+        shim = repository / "bin" / "docker"
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            captured_args = root / "finch-args"
+            fake_finch = fake_bin / "finch"
+            fake_finch.write_text(
+                "#!/bin/sh\n"
+                'printf "%s\\n" "$@" > "$FAKE_FINCH_ARGS"\n',
+                encoding="utf-8",
+            )
+            fake_finch.chmod(0o700)
+            environment = os.environ.copy()
+            environment["PATH"] = f"{fake_bin}:{environment['PATH']}"
+            environment["FAKE_FINCH_ARGS"] = str(captured_args)
+
+            for subcommand in ("exec", "run"):
+                with self.subTest(subcommand=subcommand):
+                    secret = f"synthetic-{subcommand}-secret"
                     result = subprocess.run(
                         (
                             str(shim),
-                            "compose",
-                            "-p",
-                            "harbor",
-                            "exec",
-                            "-T",
-                            environment_flag,
-                            f"ANTHROPIC_API_KEY={secret}",
+                            subcommand,
+                            "-e",
+                            f"OPENAI_API_KEY={secret}",
                             "main",
                             "true",
                         ),
@@ -54,8 +103,58 @@ class DockerShimTests(unittest.TestCase):
                     )
 
                     self.assertEqual(result.returncode, 0, result.stderr)
-                    self.assertTrue(captured_args.exists())
-                    self.assertNotIn(secret, captured_args.read_text(encoding="utf-8"))
+                    captured = captured_args.read_text(encoding="utf-8")
+                    self.assertNotIn(secret, captured)
+                    self.assertIn("--env-file", captured)
+
+    def test_secret_env_file_is_removed_after_finch_returns(self) -> None:
+        repository = Path(__file__).parents[1]
+        shim = repository / "bin" / "docker"
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            captured_env_file = root / "env-file-path"
+            fake_finch = fake_bin / "finch"
+            fake_finch.write_text(
+                "#!/bin/sh\n"
+                'for arg in "$@"; do\n'
+                '  case "$arg" in\n'
+                '    /private/tmp/harbor-finch-secrets.*) printf "%s\\n" "$arg" > "$CAPTURED_ENV_FILE"; cp "$arg" "$COPIED_ENV_FILE" ;;\n'
+                '  esac\n'
+                "done\n",
+                encoding="utf-8",
+            )
+            fake_finch.chmod(0o700)
+            environment = os.environ.copy()
+            environment["PATH"] = f"{fake_bin}:{environment['PATH']}"
+            environment["CAPTURED_ENV_FILE"] = str(captured_env_file)
+            copied_env_file = root / "copied-env-file"
+            environment["COPIED_ENV_FILE"] = str(copied_env_file)
+
+            result = subprocess.run(
+                (
+                    str(shim),
+                    "exec",
+                    "-e",
+                    "ANTHROPIC_API_KEY=synthetic-cleanup-secret",
+                    "main",
+                    "true",
+                ),
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(captured_env_file.exists())
+            self.assertFalse(Path(captured_env_file.read_text(encoding="utf-8").strip()).exists())
+            self.assertEqual(
+                copied_env_file.read_text(encoding="utf-8"),
+                "ANTHROPIC_API_KEY=synthetic-cleanup-secret\n",
+            )
 
     def test_mini_swe_uv_install_gets_bounded_download_retries(self) -> None:
         repository = Path(__file__).parents[1]

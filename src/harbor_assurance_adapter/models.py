@@ -12,6 +12,21 @@ from typing import Any
 
 
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}$")
+_SECRET_ENV_NAMES = frozenset({"ANTHROPIC_API_KEY", "OPENAI_API_KEY"})
+
+
+def _secret_assignment_name(value: str) -> str | None:
+    """Return a provider secret name when an argument contains its value."""
+
+    candidate = value
+    if value.startswith(("-e=", "--env=")):
+        candidate = value.split("=", 1)[1]
+    if "=" not in candidate:
+        return None
+    name, secret_value = candidate.split("=", 1)
+    if name in _SECRET_ENV_NAMES and secret_value:
+        return name
+    return None
 
 
 def identifier(value: object, field: str) -> str:
@@ -106,6 +121,19 @@ class RunConfig:
                 raise ValueError("pass_env contains an invalid environment name.")
         if not self.command or any(not isinstance(part, str) or not part for part in self.command):
             raise ValueError("command must contain non-empty argument strings.")
+        for index, part in enumerate(self.command):
+            assignment = _secret_assignment_name(part)
+            if (
+                assignment is None
+                and part in {"-e", "--env"}
+                and index + 1 < len(self.command)
+            ):
+                assignment = _secret_assignment_name(self.command[index + 1])
+            if assignment is not None:
+                raise ValueError(
+                    f"command contains a literal {assignment} value; "
+                    "pass the environment variable name and use pass_env instead."
+                )
         self.budget.validate()
 
 
