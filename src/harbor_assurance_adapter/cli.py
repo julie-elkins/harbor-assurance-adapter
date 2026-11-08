@@ -11,6 +11,7 @@ from pathlib import Path
 from .aah import main as aah_main
 from .agent_trace import latest_agent_trace
 from .atif import latest_trajectory, scan_trajectory
+from .job_evaluation import summarize_harbor_job
 from .models import load_config
 from .process import missing_environment, run_bounded
 from .receipt import make_receipt, write_receipt
@@ -122,6 +123,18 @@ def _run(args: argparse.Namespace) -> int:
     return 0 if status == "completed" else 1
 
 
+def _summarize_job(args: argparse.Namespace) -> int:
+    summary = summarize_harbor_job(args.job, receipt_path=args.receipt)
+    serialized = json.dumps(summary, indent=2, sort_keys=True) + "\n"
+    if args.output is None:
+        print(serialized, end="")
+        return 0
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(serialized, encoding="utf-8")
+    print(json.dumps({"status": "written", "output": str(args.output)}))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Run a bounded Harbor command and project metadata into AAH."
@@ -137,6 +150,15 @@ def main(argv: list[str] | None = None) -> int:
         help="validate configuration and write a planned receipt without execution",
     )
     run_parser.set_defaults(handler=_run)
+
+    summary_parser = subparsers.add_parser(
+        "summarize-job",
+        help="emit a public-safe per-task summary of a Harbor job",
+    )
+    summary_parser.add_argument("--job", type=Path, required=True)
+    summary_parser.add_argument("--receipt", type=Path)
+    summary_parser.add_argument("--output", type=Path)
+    summary_parser.set_defaults(handler=_summarize_job)
 
     aah_parser = subparsers.add_parser(
         "aah-adapter",

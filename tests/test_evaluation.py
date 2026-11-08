@@ -10,6 +10,7 @@ from harbor_assurance_adapter.evaluation import (
     aggregate_receipts,
     load_manifest,
 )
+from harbor_assurance_adapter.job_evaluation import summarize_harbor_job
 
 
 def _receipt(
@@ -135,6 +136,70 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(result.benchmark_observation_rate, 2 / 3)
         self.assertEqual(result.assurance_evidence_rate, 3 / 4)
         self.assertEqual(result.observed_cost_usd, 4.25)
+
+    def test_job_summary_preserves_task_denominator_without_raw_content(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            job = Path(directory)
+            (job / "config.json").write_text(
+                json.dumps(
+                    {
+                        "datasets": [
+                            {
+                                "name": "terminal-bench",
+                                "version": "2.0",
+                            }
+                        ],
+                        "agents": [
+                            {
+                                "name": "codex",
+                                "model_name": "openai/gpt-5.5",
+                                "kwargs": {"version": "0.167.0"},
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (job / "result.json").write_text(
+                json.dumps({"stats": {"cost_usd": 1.5}}),
+                encoding="utf-8",
+            )
+            for task, reward, cost in (
+                ("task-pass", 1.0, 1.0),
+                ("task-fail", 0.0, 0.5),
+            ):
+                task_dir = job / task
+                task_dir.mkdir()
+                (task_dir / "result.json").write_text(
+                    json.dumps(
+                        {
+                            "task_name": task,
+                            "task_id": {
+                                "git_commit_id": "public-task-revision"
+                            },
+                            "agent_result": {
+                                "cost_usd": cost,
+                                "provider_response": "do not export secret",
+                            },
+                            "verifier_result": {
+                                "rewards": {"reward": reward}
+                            },
+                            "exception_info": None,
+                            "prompt": "do not export prompt",
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+
+            summary = summarize_harbor_job(job)
+            serialized = json.dumps(summary)
+
+        self.assertEqual(summary["metrics"]["attempted_tasks"], 2)
+        self.assertEqual(summary["metrics"]["clean_executions"], 2)
+        self.assertEqual(summary["metrics"]["benchmark_passes"], 1)
+        self.assertEqual(summary["metrics"]["benchmark_failures"], 1)
+        self.assertNotIn("do not export", serialized)
+        self.assertNotIn(str(job), serialized)
 
 
 if __name__ == "__main__":

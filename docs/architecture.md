@@ -65,6 +65,13 @@ installer artifact through the Astral release mirror. This does not replace the
 verifier or alter its tests; it only avoids making a benchmark score depend on
 one transient GitHub download.
 
+For Debian-based task images, the shim also adds bounded retries to the APT
+package downloads used by Harbor's Codex setup. When an image declares the
+public task's old `bullseye-security` repository, it uses Debian's matching
+archive because the live security mirror can advertise package versions it no
+longer serves. Newer images keep their normal package sources; the shim does
+not change the installed package set.
+
 ## Runner profiles
 
 The first runner is mini-swe-agent because its linear trajectory is straightforward
