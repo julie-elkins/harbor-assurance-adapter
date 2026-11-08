@@ -158,6 +158,48 @@ class RunnerResultTests(unittest.TestCase):
         self.assertEqual(result.failure_phase, "provider")
         self.assertEqual(result.successful_trials, 0)
 
+    def test_provider_quota_detection_supports_claude_code_logs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            result_path = root / "job" / "result.json"
+            trial_path = result_path.parent / "trial-1"
+            (trial_path / "agent").mkdir(parents=True)
+            (trial_path / "agent" / "claude-code.txt").write_text(
+                "API Error: 400 You have reached your specified "
+                "API usage limits.",
+                encoding="utf-8",
+            )
+            (trial_path / "result.json").write_text(
+                json.dumps(
+                    {
+                        "exception_info": {
+                            "exception_message": "Command failed (exit 1)",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result_path.write_text(
+                json.dumps(
+                    {
+                        "n_total_trials": 1,
+                        "stats": {
+                            "n_completed_trials": 1,
+                            "n_errored_trials": 1,
+                            "cost_usd": 0.0,
+                            "exception_stats": {
+                                "NonZeroAgentExitCodeError": ["trial-1"],
+                            },
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = latest_result(root, time.time() - 1)
+
+        self.assertEqual(result.failure_kind, "ProviderQuotaExceeded")
+        self.assertEqual(result.failure_phase, "provider")
+
     def test_incomplete_agent_trace_is_distinguished_from_generic_exit(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
