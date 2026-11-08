@@ -109,6 +109,21 @@ class AgentTraceTests(unittest.TestCase):
         self.assertEqual(result.status, "metadata-invalid")
         self.assertIsNotNone(result.log_digest)
 
+    def test_plain_text_agent_log_is_not_claimed_as_malformed_jsonl(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "job" / "trial" / "agent"
+            path.mkdir(parents=True)
+            (path / "mini-swe-agent.txt").write_text(
+                "Task completed in the runner's human-readable log.\n",
+                encoding="utf-8",
+            )
+
+            result = latest_agent_trace(root, time.time() - 1)
+
+        self.assertEqual(result.status, "metadata-unavailable")
+        self.assertIsNotNone(result.log_digest)
+
 
 if __name__ == "__main__":
     unittest.main()
