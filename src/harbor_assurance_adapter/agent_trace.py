@@ -50,15 +50,28 @@ def _scan(path: Path) -> AgentTraceSummary:
         return AgentTraceSummary(status="metadata-unavailable")
 
     digest = hashlib.sha256(raw).hexdigest()
+    lines = [line for line in raw.decode("utf-8", errors="replace").splitlines() if line.strip()]
+    if not lines:
+        return AgentTraceSummary(
+            status="metadata-invalid",
+            log_digest=digest,
+        )
+    first_line = lines[0].lstrip()
+    if not first_line.startswith(("{", "[")):
+        # Some runners retain a human-readable text log beside their native
+        # trajectory artifact. It is not malformed JSONL; it is a different
+        # log format that this scanner does not claim to interpret.
+        return AgentTraceSummary(
+            status="metadata-unavailable",
+            log_digest=digest,
+        )
     event_count = 0
     tool_call_count = 0
     last_event_type: str | None = None
     last_item_type: str | None = None
     last_status: str | None = None
     terminal_event_type: str | None = None
-    for line in raw.decode("utf-8", errors="replace").splitlines():
-        if not line.strip():
-            continue
+    for line in lines:
         try:
             event = json.loads(line)
         except json.JSONDecodeError:
