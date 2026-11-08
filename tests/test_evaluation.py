@@ -60,6 +60,7 @@ def _receipt(
                 "atif_scan_status": atif_status,
                 "assurance_status": "observed",
                 "stop_condition": "stop-after-one-task-or-any-timeout-or-output-cap",
+                "assurance_source": "atif",
                 "benchmark_status": benchmark_status,
                 "benchmark_score": 1.0 if benchmark_status == "passed" else 0.0,
                 "benchmark_failure_kind": (
@@ -136,6 +137,28 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(result.benchmark_observation_rate, 2 / 3)
         self.assertEqual(result.assurance_evidence_rate, 3 / 4)
         self.assertEqual(result.observed_cost_usd, 4.25)
+
+    def test_agent_jsonl_assurance_source_counts_as_checked(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "claude.json"
+            _receipt(path, status="completed", benchmark_status="passed")
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data.update(
+                {
+                    "agent": "claude-code",
+                    "assurance_source": "agent-jsonl",
+                    "atif_scan_status": "not-applicable",
+                    "assurance_status": "metadata-checked",
+                }
+            )
+            path.write_text(json.dumps(data), encoding="utf-8")
+
+            result = aggregate_receipts(
+                (ReceiptObservation("claude-code", "task-a", path),)
+            )[0]
+
+        self.assertEqual(result.assurance_checked_runs, 1)
+        self.assertEqual(result.assurance_evidence_rate, 1.0)
 
     def test_job_summary_preserves_task_denominator_without_raw_content(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

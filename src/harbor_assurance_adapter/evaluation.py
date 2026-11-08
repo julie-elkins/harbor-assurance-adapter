@@ -84,6 +84,19 @@ def _benchmark_observed(receipt: Any) -> bool:
     return receipt.benchmark_status in {"passed", "failed", "partial"}
 
 
+def _assurance_checked(receipt: Any) -> bool:
+    """Recognise only explicitly labelled evidence sources."""
+
+    if receipt.agent_trace_status != "metadata-checked":
+        return False
+    if receipt.assurance_source == "agent-jsonl":
+        return (
+            receipt.assurance_status == "metadata-checked"
+            and receipt.atif_scan_status == "not-applicable"
+        )
+    return receipt.assurance_source == "atif" and receipt.atif_scan_status == "passed"
+
+
 def aggregate_receipts(
     observations: tuple[ReceiptObservation, ...],
 ) -> tuple[AgentEvaluation, ...]:
@@ -107,11 +120,7 @@ def aggregate_receipts(
             receipt.benchmark_failure_kind == "VerifierEnvironmentFailure"
             for receipt in receipts
         )
-        assurance = sum(
-            receipt.atif_scan_status == "passed"
-            and receipt.agent_trace_status == "metadata-checked"
-            for receipt in receipts
-        )
+        assurance = sum(_assurance_checked(receipt) for receipt in receipts)
         cost = sum(
             receipt.observed_cost_usd or 0.0
             for receipt in receipts

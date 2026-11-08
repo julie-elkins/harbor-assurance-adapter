@@ -155,6 +155,7 @@ class RunReceipt:
     atif_scan_status: str
     assurance_status: str
     stop_condition: str
+    assurance_source: str = "atif"
     benchmark_status: str = "not-run"
     benchmark_score: float | None = None
     benchmark_failure_kind: str | None = None
@@ -165,6 +166,8 @@ class RunReceipt:
     failure_phase: str | None = None
     agent_trace_status: str = "not-run"
     agent_event_count: int | None = None
+    agent_tool_call_count: int | None = None
+    agent_log_digest: str | None = None
     agent_last_event_type: str | None = None
     agent_last_item_type: str | None = None
     agent_last_status: str | None = None
@@ -188,6 +191,7 @@ class RunReceipt:
         identifier(self.runner_result_status, "runner_result_status")
         identifier(self.atif_scan_status, "atif_scan_status")
         identifier(self.assurance_status, "assurance_status")
+        identifier(self.assurance_source, "assurance_source")
         identifier(self.benchmark_status, "benchmark_status")
         non_negative(self.estimated_cost_usd, "estimated_cost_usd")
         non_negative(self.max_total_cost_usd, "max_total_cost_usd")
@@ -237,6 +241,14 @@ class RunReceipt:
             or self.agent_event_count < 0
         ):
             raise ValueError("agent_event_count must be a non-negative integer or null.")
+        if self.agent_tool_call_count is not None and (
+            isinstance(self.agent_tool_call_count, bool)
+            or not isinstance(self.agent_tool_call_count, int)
+            or self.agent_tool_call_count < 0
+        ):
+            raise ValueError(
+                "agent_tool_call_count must be a non-negative integer or null."
+            )
 
 
 def command_digest(command: tuple[str, ...]) -> str:

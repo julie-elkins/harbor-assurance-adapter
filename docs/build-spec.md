@@ -30,8 +30,9 @@ a reproducible public evaluation record.
   status.
 - A completed run scans the local ATIF trajectory for schema shape, bounded
   step/tool-call counts, and a digest without exporting trajectory content.
-  The scanner explicitly supports the ATIF versions emitted by the validated
-  mini-swe-agent, Claude Code, and Codex Harbor paths.
+  When the validated Claude Code Harbor path omits ATIF, the receipt uses an
+  explicitly labelled metadata-only JSONL evidence source instead of claiming
+  ATIF was present.
 - The Claude Code profile pins the runner release, model budget, and Harbor
   agent name without requiring a second custom container shim.
 - The Codex profile pins a published npm package version, passes only

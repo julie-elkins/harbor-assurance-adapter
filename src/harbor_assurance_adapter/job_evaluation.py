@@ -173,6 +173,7 @@ def summarize_harbor_job(
         assurance.update(
             status=receipt.assurance_status,
             atif_scan_status=receipt.atif_scan_status,
+            assurance_source=receipt.assurance_source,
         )
 
     return {
