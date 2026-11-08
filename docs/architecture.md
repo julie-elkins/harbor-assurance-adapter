@@ -59,6 +59,12 @@ The receipt aggregator consumes only validated receipt fields. Pilot receipts
 and matched-cohort receipts must remain distinguishable; mechanically combining
 them would produce a number with an unclear denominator.
 
+The Finch compatibility shim also repairs a verifier transport failure observed
+in the public Terminal-Bench tasks: it routes the verifier's pinned `uv` 0.9.5
+installer artifact through the Astral release mirror. This does not replace the
+verifier or alter its tests; it only avoids making a benchmark score depend on
+one transient GitHub download.
+
 ## Runner profiles
 
 The first runner is mini-swe-agent because its linear trajectory is straightforward

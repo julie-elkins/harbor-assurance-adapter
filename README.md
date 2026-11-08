@@ -70,6 +70,12 @@ dependency path: LiteLLM imports MCP support at startup, while mini-swe-agent
 does not declare MCP as a required dependency. It does not modify Harbor, the
 benchmark image, or the task verifier.
 
+For the public Terminal-Bench tasks whose verifier script installs `uv` at
+test time, the shim routes the pinned `uv` 0.9.5 installer artifact through the
+Astral release mirror. This is a dependency-transport repair for transient
+GitHub download failures; it leaves the verifier script, pinned test
+dependencies, and scoring logic unchanged.
+
 For the Anthropic secret, the shim writes a user-readable-only temporary
 `env_file` and uses Finch's direct `exec --env-file` path for agent commands.
 This keeps the value out of the Finch process command line, where local process

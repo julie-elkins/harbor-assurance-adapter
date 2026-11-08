@@ -126,6 +126,63 @@ class DockerShimTests(unittest.TestCase):
                 rewritten,
             )
 
+    def test_terminal_bench_verifier_uses_uv_release_mirror(self) -> None:
+        repository = Path(__file__).parents[1]
+        shim = repository / "bin" / "docker"
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            captured_args = root / "finch-args"
+            fake_finch = fake_bin / "finch"
+            fake_finch.write_text(
+                "#!/bin/sh\n"
+                'printf "%s\\n" "$@" > "$FAKE_FINCH_ARGS"\n',
+                encoding="utf-8",
+            )
+            fake_finch.chmod(0o700)
+            environment = os.environ.copy()
+            environment["PATH"] = f"{fake_bin}:{environment['PATH']}"
+            environment["FAKE_FINCH_ARGS"] = str(captured_args)
+
+            result = subprocess.run(
+                (
+                    str(shim),
+                    "compose",
+                    "-p",
+                    "harbor",
+                    "exec",
+                    "-T",
+                    "main",
+                    "sh",
+                    "-c",
+                    "bash /tests/test.sh",
+                ),
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            encoded_command = next(
+                line
+                for line in captured_args.read_text(encoding="utf-8").splitlines()
+                if line.startswith("echo ") and line.endswith(" | base64 -d | bash")
+            )
+            encoded = encoded_command.removeprefix("echo ").removesuffix(
+                " | base64 -d | bash"
+            )
+            rewritten = base64.b64decode(encoded).decode("utf-8")
+            self.assertTrue(
+                rewritten.startswith(
+                    "export INSTALLER_DOWNLOAD_URL=https://releases.astral.sh/"
+                    "github/uv/releases/download/0.9.5; "
+                )
+            )
+            self.assertIn("bash /tests/test.sh", rewritten)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -69,6 +69,16 @@ if [ "$1" = "compose" ]; then
                     ;;
             esac
             case "$compose_command" in
+                *"/tests/test.sh"*)
+                    # Terminal-Bench's published verifiers install their
+                    # pinned uv release at test time. Route only that
+                    # dependency artifact through the reachable Astral
+                    # release mirror; keep the verifier script and pinned
+                    # test dependencies unchanged.
+                    compose_command="export INSTALLER_DOWNLOAD_URL=https://releases.astral.sh/github/uv/releases/download/0.9.5; $compose_command"
+                    ;;
+            esac
+            case "$compose_command" in
                 *"uv tool install mini-swe-agent"*)
                     # LiteLLM's current release imports MCP support during
                     # startup, while mini-swe-agent leaves MCP optional.
