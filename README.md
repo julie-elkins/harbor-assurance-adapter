@@ -27,6 +27,10 @@ pass rate.
 - Evaluation target: a matched 10-task public Terminal-Bench 2.0 cohort.
 - Public study contract: [evaluation-manifest.toml](docs/evaluation-manifest.toml)
   and [metrics.md](docs/metrics.md).
+- Matched-run procedure:
+  [comparison-runbook.md](docs/comparison-runbook.md).
+- Public per-task results are generated with the `summarize-job` command and
+  stored under `docs/results/`.
 - Raw trajectories and process logs: local-only under `runs/`.
 - Public receipt: identifiers, versions, counts, statuses, digests, timing, and
   declared cost observations only.
@@ -75,6 +79,13 @@ test time, the shim routes the pinned `uv` 0.9.5 installer artifact through the
 Astral release mirror. This is a dependency-transport repair for transient
 GitHub download failures; it leaves the verifier script, pinned test
 dependencies, and scoring logic unchanged.
+
+For Codex setup on Debian-based task images, the shim adds bounded APT archive
+retries. APT is the Debian package manager. The public `qemu-startup` task uses
+old Bullseye metadata whose live security mirror points at removed package
+archives, so the shim uses Debian's matching archive only when
+`bullseye-security` is present. It does not add packages or change the task
+image.
 
 For the Anthropic secret, the shim writes a user-readable-only temporary
 `env_file` and uses Finch's direct `exec --env-file` path for agent commands.
@@ -128,6 +139,11 @@ model, credential boundary, and one-attempt limit while selecting the small
 public `fix-git` task. Its purpose is diagnosis, not leaderboard scoring: a
 failure here points to the Codex/container path, while a pass points toward
 task-specific workload or resource pressure in `gpt2-codegolf`.
+
+The setup-smoke profile is
+`config/codex-qemu-setup-smoke-2.0.toml`. It selects only `qemu-startup` to
+check whether the Debian package-retry repair lets Codex start. This is
+diagnostic evidence, not a replacement for the original matched cohort.
 
 ## Run the local AAH projection
 
