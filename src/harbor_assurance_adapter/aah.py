@@ -58,6 +58,12 @@ def _response(request: dict[str, object], receipt_path: Path | None) -> dict[str
             "execution_status": receipt.status if receipt else "synthetic",
             "benchmark_status": receipt.benchmark_status if receipt else "synthetic",
             "benchmark_score": receipt.benchmark_score if receipt else None,
+            "benchmark_failure_kind": (
+                receipt.benchmark_failure_kind if receipt else None
+            ),
+            "benchmark_failure_phase": (
+                receipt.benchmark_failure_phase if receipt else None
+            ),
             "runner_total_trials": (
                 receipt.runner_total_trials if receipt else None
             ),

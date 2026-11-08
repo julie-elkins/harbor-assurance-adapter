@@ -157,6 +157,8 @@ class RunReceipt:
     stop_condition: str
     benchmark_status: str = "not-run"
     benchmark_score: float | None = None
+    benchmark_failure_kind: str | None = None
+    benchmark_failure_phase: str | None = None
     atif_step_count: int | None = None
     atif_tool_call_count: int | None = None
     failure_kind: str | None = None
@@ -218,6 +220,8 @@ class RunReceipt:
         for field_name in (
             "failure_kind",
             "failure_phase",
+            "benchmark_failure_kind",
+            "benchmark_failure_phase",
             "agent_trace_status",
             "agent_last_event_type",
             "agent_last_item_type",

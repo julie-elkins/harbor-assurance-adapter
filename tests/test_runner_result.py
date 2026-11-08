@@ -274,6 +274,44 @@ class RunnerResultTests(unittest.TestCase):
         self.assertEqual(result.benchmark_status, "failed")
         self.assertEqual(result.benchmark_score, 0.0)
 
+    def test_verifier_environment_failure_is_not_agent_benchmark_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            result_path = root / "job" / "result.json"
+            trial_path = result_path.parent / "trial-1"
+            (trial_path / "verifier").mkdir(parents=True)
+            (trial_path / "verifier" / "test-stdout.txt").write_text(
+                "downloading uv\n"
+                "curl: (22) the requested URL returned error: 504\n"
+                "uvx: command not found\n",
+                encoding="utf-8",
+            )
+            result_path.write_text(
+                json.dumps(
+                    {
+                        "n_total_trials": 1,
+                        "stats": {
+                            "n_completed_trials": 1,
+                            "n_errored_trials": 0,
+                            "cost_usd": 0.29,
+                            "evals": {
+                                "terminal-bench": {
+                                    "metrics": [{"mean": 0.0}],
+                                }
+                            },
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = latest_result(root, time.time() - 1)
+
+        self.assertEqual(result.status, "completed")
+        self.assertEqual(result.benchmark_status, "invalid")
+        self.assertIsNone(result.benchmark_score)
+        self.assertEqual(result.benchmark_failure_kind, "VerifierEnvironmentFailure")
+        self.assertEqual(result.benchmark_failure_phase, "verifier-setup")
+
 
 if __name__ == "__main__":
     unittest.main()

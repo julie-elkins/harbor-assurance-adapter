@@ -4,12 +4,14 @@
 
 A public-data-only Harbor execution adapter that runs bounded benchmark
 invocations for comparable runners, stores raw output locally, writes
-metadata-only receipts, and exposes an AAH-compatible JSONL projection.
+metadata-only receipts, exposes an AAH-compatible JSONL projection, and produces
+a reproducible public evaluation record.
 
 ## Not building
 
 - A fork or patch of Harbor, Terminal-Bench, mini-swe-agent, Claude Code, or Codex.
-- A public leaderboard submission.
+- A claim that the assurance harness itself is a leaderboard score.
+- An automatic external publication or leaderboard comment.
 - A hosted dashboard or model router.
 - A raw-trajectory upload path.
 - A provider billing guarantee.
@@ -42,6 +44,12 @@ metadata-only receipts, and exposes an AAH-compatible JSONL projection.
 - The AAH projection emits only identifier-level fields and structured refusals.
 - Tests cover budget refusal, receipt redaction, process failure classification,
   and AAH projection.
+- The public evaluation manifest pins the benchmark revision, task-set revision,
+  agent profiles, and publication boundary.
+- The metric contract reports execution completion separately from benchmark
+  correctness and assurance evidence.
+- Aggregate metrics can be computed from metadata-only receipts without reading
+  raw trajectories or provider output.
 
 ## Pilot stop condition
 

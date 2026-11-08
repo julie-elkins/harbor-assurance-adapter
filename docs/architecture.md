@@ -34,6 +34,8 @@ metadata-only receipt
     |
     v
 AAH JSONL projection
+
+evaluation manifest + receipt aggregator
 ```
 
 The Harbor process is the upstream dependency. A failed, timed-out, or output-capped
@@ -51,6 +53,11 @@ evaluate agent reasoning or tool decisions.
 
 Raw process output and trajectories are local-only and ignored by Git. The current
 preflight cost check is a declared estimate, not a provider billing guarantee.
+
+The public evaluation manifest defines the matched cohort and metric formulas.
+The receipt aggregator consumes only validated receipt fields. Pilot receipts
+and matched-cohort receipts must remain distinguishable; mechanically combining
+them would produce a number with an unclear denominator.
 
 ## Runner profiles
 

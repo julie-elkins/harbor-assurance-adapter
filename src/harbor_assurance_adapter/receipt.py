@@ -96,6 +96,8 @@ def make_receipt(
         stop_condition=config.budget.stop_condition,
         benchmark_status=runner_result.benchmark_status,
         benchmark_score=runner_result.benchmark_score,
+        benchmark_failure_kind=runner_result.benchmark_failure_kind,
+        benchmark_failure_phase=runner_result.benchmark_failure_phase,
         atif_step_count=atif_step_count,
         atif_tool_call_count=atif_tool_call_count,
         failure_kind=runner_result.failure_kind,

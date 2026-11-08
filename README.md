@@ -11,18 +11,27 @@ The receipt therefore records execution status separately from benchmark status:
 `completed` means Harbor finished cleanly, while `passed`, `failed`, or `partial`
 describes the benchmark score.
 
+The evaluation layer reports execution completion, benchmark correctness,
+conditional benchmark pass rate, benchmark observation rate, assurance evidence,
+and observed cost separately. A conditional pass rate is the fraction of clean
+executions that passed verification; it is not a replacement for the overall
+pass rate.
+
 ## Current scope
 
 - First runner: mini-swe-agent v2.4.6.
 - Second runner: Claude Code 2.1.319 through Harbor's built-in `claude-code`
   agent.
-- Third runner profile: Codex npm package 0.167.0 through Harbor's built-in `codex`
-  agent; one controlled task passed and one later task ended with a runner error.
-- First benchmark target: one public Terminal-Bench smoke task.
+- Third runner: Codex npm package 0.167.0 through Harbor's built-in `codex`
+  agent.
+- Evaluation target: a matched 10-task public Terminal-Bench 2.0 cohort.
+- Public study contract: [evaluation-manifest.toml](docs/evaluation-manifest.toml)
+  and [metrics.md](docs/metrics.md).
 - Raw trajectories and process logs: local-only under `runs/`.
 - Public receipt: identifiers, versions, counts, statuses, digests, timing, and
   declared cost observations only.
-- First pilot ceiling: one task, one attempt, and a declared $25 ceiling.
+- Pilot runs and matched comparison runs remain separate evidence sets; a
+  follow-up task must not be added to a leaderboard-style denominator.
 
 The declared cost is a preflight estimate, not a provider billing guarantee.
 The command is never run until the estimate is within the configured ceiling.

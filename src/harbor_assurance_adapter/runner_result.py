@@ -23,6 +23,8 @@ class RunnerResult:
     observed_cost_usd: float | None = None
     benchmark_status: str = "not-run"
     benchmark_score: float | None = None
+    benchmark_failure_kind: str | None = None
+    benchmark_failure_phase: str | None = None
     failure_kind: str | None = None
     failure_phase: str | None = None
 
@@ -80,6 +82,27 @@ def _benchmark_observation(stats: dict[str, Any]) -> tuple[str, float | None]:
     if score == 0.0:
         return "failed", score
     return "partial", score
+
+
+def _verifier_failure_observation(
+    result_root: Path,
+) -> tuple[str | None, str | None]:
+    """Classify verifier setup failures without exporting verifier output."""
+
+    for path in result_root.glob("*/verifier/test-stdout.txt"):
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        normalized = re.sub(r"\s+", " ", text.lower())
+        if (
+            "failed to download" in normalized
+            and "uv" in normalized
+        ) or "uvx: command not found" in normalized:
+            return "VerifierEnvironmentFailure", "verifier-setup"
+        if "/root/.local/bin/env: no such file or directory" in normalized:
+            return "VerifierEnvironmentFailure", "verifier-setup"
+    return None, None
 
 
 def _has_provider_quota_marker(text: str) -> bool:
@@ -208,6 +231,14 @@ def _parse(path: Path) -> RunnerResult:
     benchmark_status, benchmark_score = (
         _benchmark_observation(stats) if status == "completed" else ("not-run", None)
     )
+    benchmark_failure_kind, benchmark_failure_phase = (
+        _verifier_failure_observation(path.parent)
+        if status == "completed"
+        else (None, None)
+    )
+    if benchmark_failure_kind is not None:
+        benchmark_status = "invalid"
+        benchmark_score = None
     return RunnerResult(
         status=status,
         total_trials=total_trials,
@@ -216,6 +247,8 @@ def _parse(path: Path) -> RunnerResult:
         observed_cost_usd=observed_cost_usd,
         benchmark_status=benchmark_status,
         benchmark_score=benchmark_score,
+        benchmark_failure_kind=benchmark_failure_kind,
+        benchmark_failure_phase=benchmark_failure_phase,
         failure_kind=failure_kind,
         failure_phase=failure_phase,
     )

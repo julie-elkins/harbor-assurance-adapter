@@ -1,0 +1,45 @@
+[study]
+id = "terminal-bench-2.0-agent-assurance-2026"
+title = "Agent execution assurance on Terminal-Bench 2.0"
+visibility = "public"
+benchmark = "terminal-bench"
+benchmark_revision = "2.0"
+task_set = "comparison-suite-10"
+task_set_revision = "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c"
+attempts_per_task = 1
+retries = 0
+
+[study.boundary]
+raw_trajectories = "local-only"
+provider_responses = "excluded"
+secrets = "excluded"
+unpublished_content = "excluded"
+
+[metrics]
+execution_completion_rate = "clean_executions / attempted_runs"
+benchmark_pass_rate = "benchmark_passes / attempted_runs"
+conditional_benchmark_pass_rate = "benchmark_passes / clean_executions"
+benchmark_observation_rate = "benchmark_observations / clean_executions"
+assurance_evidence_rate = "assurance_checked_runs / attempted_runs"
+observed_cost_usd = "sum of observed receipt costs"
+
+[[agents]]
+id = "codex"
+config = "config/codex-comparison-10-2.0.toml"
+runner_revision = "0.167.0"
+model = "openai/gpt-5.5"
+provider = "openai"
+
+[[agents]]
+id = "claude-code"
+config = "config/claude-code-comparison-10-2.0.toml"
+runner_revision = "2.1.319"
+model = "anthropic/claude-opus-4-6"
+provider = "anthropic"
+
+[[agents]]
+id = "mini-swe-agent"
+config = "config/mini-swe-agent-comparison-10-2.0.toml"
+runner_revision = "2.4.6"
+model = "anthropic/claude-opus-4-6"
+provider = "anthropic"
