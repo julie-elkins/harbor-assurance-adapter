@@ -1,0 +1,19 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Real trajectories and process logs stay local-only.
+runs/*
+!runs/.gitkeep
+jobs/*
+
+# Local configuration may contain provider or machine details.
+config/local.toml
+
+# Local provider environment files must never enter Git.
+*.env

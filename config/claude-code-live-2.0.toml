@@ -1,0 +1,51 @@
+[run]
+benchmark = "terminal-bench"
+benchmark_revision = "2.0"
+agent = "claude-code"
+# OBSERVED 2026-11-07: `claude --version` on the local machine reported 2.1.319.
+agent_revision = "2.1.319"
+model = "anthropic/claude-opus-4-6"
+provider = "anthropic"
+harness = "harbor"
+harness_revision = "v0.9.0"
+pass_env = ["ANTHROPIC_API_KEY"]
+path_prefix = "bin"
+workdir = "."
+raw_run_dir = "runs"
+
+[budget]
+max_total_cost_usd = 25.0
+# MODELLING ASSUMPTION: one Claude Code task is capped below the pilot ceiling;
+# replace this estimate after the first measured run.
+estimated_cost_per_task_usd = 15.0
+task_count = 1
+attempts = 1
+timeout_seconds = 3600
+max_output_bytes = 262144
+stop_condition = "stop-after-one-task-or-any-timeout-or-output-cap"
+
+[command]
+argv = [
+  "harbor",
+  "run",
+  "--dataset",
+  "terminal-bench@2.0",
+  "--agent",
+  "claude-code",
+  "--model",
+  "anthropic/claude-opus-4-6",
+  "--agent-kwarg",
+  "version=2.1.319",
+  "--agent-kwarg",
+  "max_budget_usd=15",
+  "--n-tasks",
+  "1",
+  "--n-attempts",
+  "1",
+  "--n-concurrent",
+  "1",
+  "--agent-timeout-multiplier",
+  "4",
+  "--env",
+  "docker",
+]

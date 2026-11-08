@@ -1,0 +1,242 @@
+#!/bin/sh
+# Finch exposes Docker-compatible container operations under its own name.
+# This local shim lets Harbor's Docker preflight and compose calls use Finch.
+#
+# Harbor uses Docker Compose flags that Finch's Compose command does not
+# implement: "--rmi all" during cleanup and "--wait" during startup. Remove
+# exactly those flags and preserve every other argument.
+if [ "$1" = "compose" ]; then
+    override_file=
+    prebuilt_image=
+    secret_env_file=
+    compose_subcommand=
+    if [ -n "${PREBUILT_IMAGE_NAME:-}" ]; then
+        case "$PREBUILT_IMAGE_NAME" in
+            *[!A-Za-z0-9._/@:-]*)
+                ;;
+            *)
+                prebuilt_image=$PREBUILT_IMAGE_NAME
+                ;;
+        esac
+    fi
+    temp_root=/private/tmp
+    [ -d "$temp_root" ] || temp_root=${TMPDIR:-/tmp}
+    if [ -n "$prebuilt_image" ] || [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+        if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+            secret_env_file=$temp_root/harbor-finch-anthropic.env
+            (umask 077 && printf '%s\n' "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" > "$secret_env_file")
+        fi
+        override_file=$(mktemp "$temp_root/harbor-finch-prebuilt.XXXXXX")
+        {
+            printf '%s\n' "services:" "  main:"
+            if [ -n "$prebuilt_image" ]; then
+                printf '%s\n' "    image: $prebuilt_image"
+            fi
+        } > "$override_file"
+    fi
+
+    project_name=
+    project_flag=
+    for compose_arg in "$@"; do
+        if [ "$project_flag" = "yes" ]; then
+            project_name=$compose_arg
+            project_flag=
+            continue
+        fi
+        case "$compose_arg" in
+            -p|--project-name)
+                project_flag=yes
+                ;;
+            --project-name=*)
+                project_name=${compose_arg#*=}
+                ;;
+        esac
+    done
+
+    filtered_args=
+    command_seen=0
+    shift
+    while [ "$#" -gt 0 ]; do
+        if [ "$1" = "-c" ] && [ "$#" -gt 1 ]; then
+            compose_command=$2
+            case "$compose_command" in
+                *"curl -LsSf https://astral.sh/uv/0.7.13/install.sh | sh"*)
+                    # Harbor installs mini-swe-agent inside each task
+                    # container. Retry transient download failures so a
+                    # registry or GitHub 5xx does not become a setup error.
+                    compose_command=$(printf '%s' "$compose_command" |
+                        sed 's#curl -LsSf https://astral.sh/uv/0.7.13/install.sh | sh#export INSTALLER_DOWNLOAD_URL=https://releases.astral.sh/github/uv/releases/download/0.7.13; curl --retry 5 --retry-delay 5 --retry-max-time 180 -LsSf https://astral.sh/uv/0.7.13/install.sh | sh#')
+                    ;;
+            esac
+            case "$compose_command" in
+                *"uv tool install mini-swe-agent"*)
+                    # LiteLLM's current release imports MCP support during
+                    # startup, while mini-swe-agent leaves MCP optional.
+                    # Add it only to mini-swe-agent's isolated uv tool
+                    # environment; do not change Harbor or the task image.
+                    compose_command=$(printf '%s' "$compose_command" |
+                        sed "s|uv tool install mini-swe-agent|UV_PYTHON_INSTALL_MIRROR=https://releases.astral.sh/github/python-build-standalone/releases/download uv tool install --managed-python --with 'mcp>=2.2,<3' mini-swe-agent|")
+                    ;;
+            esac
+            encoded_command=$(printf '%s' "$compose_command" | base64 | tr -d '\n')
+            filtered_args="$filtered_args
+-c
+echo $encoded_command | base64 -d | bash"
+            shift 2
+            continue
+        fi
+        if { [ "$1" = "-e" ] || [ "$1" = "--env" ]; } && [ "$#" -gt 1 ]; then
+            env_assignment=$2
+            env_name=${env_assignment%%=*}
+            case "$env_name" in
+                ANTHROPIC_API_KEY)
+                    # The override loads this variable from a protected
+                    # temporary env file for direct Finch exec. Do not pass
+                    # its value through Compose exec, where it becomes a
+                    # process argument.
+                    if [ -z "$secret_env_file" ]; then
+                        secret_env_file=$temp_root/harbor-finch-anthropic.env
+                        env_value=${env_assignment#*=}
+                        (umask 077 && printf '%s\n' "ANTHROPIC_API_KEY=$env_value" > "$secret_env_file")
+                    fi
+                    shift 2
+                    continue
+                    ;;
+            esac
+        fi
+        case "$1" in
+            -e=*|--env=*)
+                env_assignment=${1#*=}
+                env_name=${env_assignment%%=*}
+                if [ "$env_name" = "ANTHROPIC_API_KEY" ]; then
+                    if [ -z "$secret_env_file" ]; then
+                        secret_env_file=$temp_root/harbor-finch-anthropic.env
+                        env_value=${env_assignment#*=}
+                        (umask 077 && printf '%s\n' "ANTHROPIC_API_KEY=$env_value" > "$secret_env_file")
+                    fi
+                    shift
+                    continue
+                fi
+                ;;
+        esac
+        if [ "$1" = "--rmi" ] && [ "$2" = "all" ]; then
+            shift 2
+            continue
+        fi
+        if [ "$1" = "--wait" ]; then
+            shift
+            continue
+        fi
+        if [ "$command_seen" -eq 0 ]; then
+            case "$1" in
+                build|config|cp|create|down|exec|images|kill|logs|pause|port|ps|pull|push|restart|rm|run|start|stop|top|unpause|up)
+                    command_seen=1
+                    compose_subcommand=$1
+                    if [ -n "$override_file" ]; then
+                        filtered_args="$filtered_args
+-f
+$override_file"
+                    fi
+                    ;;
+            esac
+        fi
+        filtered_args="$filtered_args
+$1"
+        shift
+    done
+
+    # Rebuild the argument vector without invoking a shell for the command.
+    set --
+    old_ifs=$IFS
+    IFS='
+'
+    for arg in $filtered_args; do
+        [ -n "$arg" ] && set -- "$@" "$arg"
+    done
+    IFS=$old_ifs
+    if [ "$compose_subcommand" = "exec" ] &&
+        [ -n "$secret_env_file" ] &&
+        [ -n "$project_name" ]; then
+        while [ "$#" -gt 0 ] && [ "$1" != "exec" ]; do
+            shift
+        done
+        [ "$#" -gt 0 ] && shift
+        while [ "$#" -gt 0 ]; do
+            case "$1" in
+                -T|--no-TTY)
+                    shift
+                    ;;
+                -e|--env)
+                    if [ "$#" -lt 2 ]; then
+                        shift
+                        continue
+                    fi
+                    env_assignment=$2
+                    env_name=${env_assignment%%=*}
+                    if [ "$env_name" = "ANTHROPIC_API_KEY" ]; then
+                        shift 2
+                        continue
+                    fi
+                    direct_exec_env="$direct_exec_env
+$1
+$2"
+                    shift 2
+                    ;;
+                -e=*|--env=*)
+                    env_assignment=${1#*=}
+                    env_name=${env_assignment%%=*}
+                    if [ "$env_name" = "ANTHROPIC_API_KEY" ]; then
+                        shift
+                        continue
+                    fi
+                    direct_exec_env="$direct_exec_env
+$1"
+                    shift
+                    ;;
+                -u|--user|-w|--workdir)
+                    direct_exec_options="$direct_exec_options
+$1
+$2"
+                    shift 2
+                    ;;
+                *)
+                    exec_service=$1
+                    shift
+                    break
+                    ;;
+            esac
+        done
+        if [ -n "${exec_service:-}" ]; then
+            direct_exec_args="$direct_exec_env
+$direct_exec_options
+$project_name-$exec_service-1"
+            for exec_arg in "$@"; do
+                direct_exec_args="$direct_exec_args
+$exec_arg"
+            done
+            set --
+            old_ifs=$IFS
+            IFS='
+'
+            for arg in $direct_exec_args; do
+                [ -n "$arg" ] && set -- "$@" "$arg"
+            done
+            IFS=$old_ifs
+            finch exec --env-file "$secret_env_file" "$@"
+            status=$?
+            rm -f "$secret_env_file"
+            exit "$status"
+        fi
+    fi
+    # Finch may hand Compose work to a child process after this wrapper
+    # returns. Leave the tiny override in the OS temp directory so that child
+    # can still read it; the OS cleans temporary files independently.
+    finch compose "$@"
+    status=$?
+    if [ "$compose_subcommand" = "down" ] && [ -n "$secret_env_file" ]; then
+        rm -f "$secret_env_file"
+    fi
+    exit "$status"
+fi
+
+exec finch "$@"

@@ -1,0 +1,46 @@
+[run]
+benchmark = "terminal-bench"
+benchmark_revision = "2.1"
+agent = "mini-swe-agent"
+agent_revision = "v2.4.6"
+model = "model-to-be-selected"
+provider = "provider-to-be-selected"
+harness = "harbor"
+harness_revision = "v0.9.0"
+pass_env = []
+path_prefix = "bin"
+workdir = "."
+raw_run_dir = "runs"
+
+[budget]
+max_total_cost_usd = 25.0
+estimated_cost_per_task_usd = 0.53
+task_count = 1
+attempts = 1
+timeout_seconds = 3600
+max_output_bytes = 262144
+stop_condition = "stop-after-one-task-or-any-timeout-or-output-cap"
+
+[command]
+# Replace model/provider/task placeholders after selecting the public smoke task.
+# The adapter passes this vector without a shell.
+argv = [
+  "harbor",
+  "run",
+  "--dataset",
+  "terminal-bench@2.1",
+  "--agent",
+  "mini-swe-agent",
+  "--model",
+  "model-to-be-selected",
+  "--n-tasks",
+  "1",
+  "--n-attempts",
+  "1",
+  "--n-concurrent",
+  "1",
+  "--agent-timeout-multiplier",
+  "4",
+  "--env",
+  "docker",
+]

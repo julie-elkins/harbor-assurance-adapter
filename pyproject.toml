@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "harbor-assurance-adapter"
+version = "0.1.0"
+description = "A bounded Harbor execution adapter with an Agent Assurance Harness projection."
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+harbor-assurance = "harbor_assurance_adapter.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
