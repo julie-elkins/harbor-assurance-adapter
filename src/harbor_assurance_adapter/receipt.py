@@ -34,6 +34,7 @@ def make_receipt(
     atif_tool_call_count: int | None = None,
     runner_result: RunnerResult | None = None,
     agent_trace: AgentTraceSummary | None = None,
+    assurance_source: str = "atif",
 ) -> RunReceipt:
     """Reduce one execution to identifiers and bounded observations."""
 
@@ -94,6 +95,7 @@ def make_receipt(
         atif_scan_status=atif_scan_status,
         assurance_status=assurance_status,
         stop_condition=config.budget.stop_condition,
+        assurance_source=assurance_source,
         benchmark_status=runner_result.benchmark_status,
         benchmark_score=runner_result.benchmark_score,
         benchmark_failure_kind=runner_result.benchmark_failure_kind,
@@ -104,6 +106,8 @@ def make_receipt(
         failure_phase=runner_result.failure_phase,
         agent_trace_status=agent_trace.status,
         agent_event_count=agent_trace.event_count,
+        agent_tool_call_count=agent_trace.tool_call_count,
+        agent_log_digest=agent_trace.log_digest,
         agent_last_event_type=agent_trace.last_event_type,
         agent_last_item_type=agent_trace.last_item_type,
         agent_last_status=agent_trace.last_status,

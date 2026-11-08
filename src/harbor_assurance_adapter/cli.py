@@ -6,14 +6,15 @@ import argparse
 import json
 import shutil
 import time
+from dataclasses import replace
 from pathlib import Path
 
 from .aah import main as aah_main
-from .agent_trace import latest_agent_trace
-from .atif import latest_trajectory, scan_trajectory
+from .agent_trace import AgentTraceSummary, latest_agent_trace
+from .atif import AtifScanResult, latest_trajectory, scan_trajectory
 from .job_evaluation import summarize_harbor_job
 from .models import load_config
-from .process import missing_environment, run_bounded
+from .process import ProcessResult, missing_environment, run_bounded
 from .receipt import make_receipt, write_receipt
 from .runner_result import RunnerResult, latest_result
 
@@ -23,6 +24,49 @@ def _config_path(value: str) -> Path:
     if not path.is_file():
         raise argparse.ArgumentTypeError("configuration file does not exist.")
     return path
+
+
+def _assurance_projection(
+    agent: str,
+    atif_scan: AtifScanResult,
+    agent_trace: AgentTraceSummary,
+) -> tuple[str, str, str]:
+    """Choose an explicit local evidence source without hiding ATIF failures."""
+
+    if (
+        agent == "claude-code"
+        and atif_scan.status == "missing"
+        and agent_trace.status == "metadata-checked"
+        and agent_trace.terminal_event_type is not None
+    ):
+        # Claude Code's Harbor profile currently emits a complete JSONL event
+        # log but no ATIF file. Keep `atif_scan_status` truthful and use the
+        # separate event-log evidence source rather than pretending the log is
+        # ATIF. A malformed ATIF file must remain a refusal, so this fallback
+        # applies only to a missing artifact.
+        return "not-applicable", "metadata-checked", "agent-jsonl"
+    return atif_scan.status, atif_scan.assurance_status, "atif"
+
+
+def _process_boundary_projection(
+    result: ProcessResult,
+    runner_result: RunnerResult,
+) -> RunnerResult:
+    """Record failures caused by the adapter's own bounded process boundary."""
+
+    if result.timed_out:
+        return replace(
+            runner_result,
+            failure_kind="AdapterTimeout",
+            failure_phase="adapter",
+        )
+    if result.output_capped:
+        return replace(
+            runner_result,
+            failure_kind="AdapterOutputCap",
+            failure_phase="adapter",
+        )
+    return runner_result
 
 
 def _run(args: argparse.Namespace) -> int:
@@ -78,6 +122,7 @@ def _run(args: argparse.Namespace) -> int:
         (config.workdir / config.jobs_dir).resolve(),
         started_epoch,
     )
+    runner_result = _process_boundary_projection(result, runner_result)
     trajectory = latest_trajectory(
         (config.workdir / config.jobs_dir).resolve(),
         started_epoch,
@@ -86,6 +131,11 @@ def _run(args: argparse.Namespace) -> int:
     agent_trace = latest_agent_trace(
         (config.workdir / config.jobs_dir).resolve(),
         started_epoch,
+    )
+    atif_scan_status, assurance_status, assurance_source = _assurance_projection(
+        config.agent,
+        atif_scan,
+        agent_trace,
     )
     status = (
         "completed"
@@ -102,12 +152,13 @@ def _run(args: argparse.Namespace) -> int:
         result,
         status=status,
         runner_result=runner_result,
-        atif_scan_status=atif_scan.status,
-        assurance_status=atif_scan.assurance_status,
+        atif_scan_status=atif_scan_status,
+        assurance_status=assurance_status,
         trajectory_digest=atif_scan.trajectory_digest,
         atif_step_count=atif_scan.step_count,
         atif_tool_call_count=atif_scan.tool_call_count,
         agent_trace=agent_trace,
+        assurance_source=assurance_source,
     )
     write_receipt(args.receipt, receipt)
     print(

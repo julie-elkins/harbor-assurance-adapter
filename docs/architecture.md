@@ -32,6 +32,8 @@ metadata-only receipt
     |
     +--> local ATIF structure scan (digest and bounded counts only)
     |
+    +--> Claude JSONL metadata scan when ATIF is absent
+    |
     v
 AAH JSONL projection
 
@@ -49,7 +51,9 @@ declared cost observations. It does not contain prompts, tool arguments, provide
 responses, task text, or raw trajectory content. Execution status and benchmark
 status are separate fields: a clean Harbor process can still have a failed
 benchmark score. The ATIF scan reports structural metadata only; it does not
-evaluate agent reasoning or tool decisions.
+evaluate agent reasoning or tool decisions. When the Claude profile has no ATIF
+file, the receipt uses `assurance_source = "agent-jsonl"` and records only
+event/tool-call counts plus a digest of the local log.
 
 Raw process output and trajectories are local-only and ignored by Git. The current
 preflight cost check is a declared estimate, not a provider billing guarantee.
@@ -77,7 +81,9 @@ not change the installed package set.
 The first runner is mini-swe-agent because its linear trajectory is straightforward
 to inspect. The second profile uses Harbor's built-in Claude Code agent, and the
 third profile uses Harbor's built-in Codex agent with a published npm version pin.
-Both reuse the same receipt and ATIF contracts. The Codex compatibility fix
+Both reuse the same receipt contract. Codex and mini-swe-agent use ATIF when it
+is present; Claude Code records native ATIF when Harbor writes it and uses its
+explicitly labelled JSONL evidence fallback when Harbor does not. The Codex compatibility fix
 corrects Harbor's package-version boundary without changing Harbor's execution
 path. The receipt also records bounded agent-event metadata so an abrupt runner
 exit is distinguishable from a benchmark failure.

@@ -74,12 +74,17 @@ def _response(request: dict[str, object], receipt_path: Path | None) -> dict[str
                 receipt.runner_errored_trials if receipt else None
             ),
             "atif_scan_status": receipt.atif_scan_status if receipt else "synthetic",
+            "assurance_source": receipt.assurance_source if receipt else "synthetic",
             "atif_step_count": receipt.atif_step_count if receipt else None,
             "atif_tool_call_count": receipt.atif_tool_call_count if receipt else None,
             "failure_kind": receipt.failure_kind if receipt else None,
             "failure_phase": receipt.failure_phase if receipt else None,
             "agent_trace_status": receipt.agent_trace_status if receipt else "synthetic",
             "agent_event_count": receipt.agent_event_count if receipt else None,
+            "agent_tool_call_count": (
+                receipt.agent_tool_call_count if receipt else None
+            ),
+            "agent_log_digest": receipt.agent_log_digest if receipt else None,
             "agent_last_event_type": (
                 receipt.agent_last_event_type if receipt else None
             ),

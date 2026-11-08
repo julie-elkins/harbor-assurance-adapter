@@ -7,6 +7,11 @@ from pathlib import Path
 
 from harbor_assurance_adapter.aah import _response
 from harbor_assurance_adapter.agent_trace import AgentTraceSummary
+from harbor_assurance_adapter.atif import AtifScanResult
+from harbor_assurance_adapter.cli import (
+    _assurance_projection,
+    _process_boundary_projection,
+)
 from harbor_assurance_adapter.models import (
     Budget,
     RunConfig,
@@ -47,6 +52,73 @@ def config(tmp: Path) -> RunConfig:
 
 
 class AdapterTests(unittest.TestCase):
+    def test_claude_missing_atif_uses_explicit_jsonl_assurance_source(self) -> None:
+        atif = AtifScanResult(
+            status="missing",
+            assurance_status="metadata-unavailable",
+        )
+        trace = AgentTraceSummary(
+            status="metadata-checked",
+            event_count=10,
+            tool_call_count=2,
+            log_digest="a" * 64,
+            terminal_event_type="result",
+        )
+
+        result = _assurance_projection("claude-code", atif, trace)
+
+        self.assertEqual(
+            result,
+            ("not-applicable", "metadata-checked", "agent-jsonl"),
+        )
+
+    def test_malformed_atif_is_not_hidden_by_claude_jsonl_fallback(self) -> None:
+        atif = AtifScanResult(
+            status="invalid",
+            assurance_status="metadata-refused",
+        )
+        trace = AgentTraceSummary(status="metadata-checked", event_count=10)
+
+        result = _assurance_projection("claude-code", atif, trace)
+
+        self.assertEqual(result, ("invalid", "metadata-refused", "atif"))
+
+    def test_claude_trace_without_terminal_event_is_not_assurance_evidence(self) -> None:
+        atif = AtifScanResult(
+            status="missing",
+            assurance_status="metadata-unavailable",
+        )
+        trace = AgentTraceSummary(
+            status="metadata-checked",
+            event_count=10,
+            tool_call_count=2,
+            log_digest="a" * 64,
+            last_status="in-progress",
+        )
+
+        result = _assurance_projection("claude-code", atif, trace)
+
+        self.assertEqual(result, ("missing", "metadata-unavailable", "atif"))
+
+    def test_timed_out_process_is_classified_at_adapter_boundary(self) -> None:
+        from harbor_assurance_adapter.models import ProcessResult
+
+        runner = RunnerResult(status="errored", total_trials=1)
+        result = _process_boundary_projection(
+            ProcessResult(
+                returncode=-9,
+                elapsed_seconds=3600.0,
+                timed_out=True,
+                output_capped=False,
+                stdout_bytes=0,
+                stderr_bytes=0,
+            ),
+            runner,
+        )
+
+        self.assertEqual(result.failure_kind, "AdapterTimeout")
+        self.assertEqual(result.failure_phase, "adapter")
+
     def test_prepared_configs_align_agent_timeout_with_adapter_budget(self) -> None:
         repository = Path(__file__).parents[1]
         for name in (
@@ -138,6 +210,7 @@ class AdapterTests(unittest.TestCase):
         self.assertNotIn("secret", serialized)
         self.assertEqual(response["events"][0]["sequence"], 1)
         self.assertEqual(response["trace"]["atif_scan_status"], "synthetic")
+        self.assertEqual(response["trace"]["assurance_source"], "synthetic")
 
     def test_completed_receipt_requires_clean_process(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -259,6 +332,7 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(receipt.failure_phase, "agent-execution")
         self.assertEqual(receipt.agent_trace_status, "metadata-checked")
         self.assertEqual(receipt.agent_event_count, 3)
+        self.assertEqual(receipt.assurance_source, "atif")
         self.assertEqual(receipt.agent_last_event_type, "item.started")
         self.assertIsNone(receipt.agent_terminal_event_type)
 

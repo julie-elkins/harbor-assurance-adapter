@@ -16,7 +16,11 @@ For each attempted task:
 - An **invalid benchmark result** is a run whose agent completed but whose
   verifier environment failed before producing a trustworthy task result.
   It is reported separately and is not evidence about agent correctness.
-- **Assurance evidence** is a receipt with `atif_scan_status = "passed"` and
+- **Assurance evidence** is either an ATIF receipt with
+  `assurance_source = "atif"` and `atif_scan_status = "passed"`, or a Claude
+  Code receipt with `assurance_source = "agent-jsonl"`,
+  `atif_scan_status = "not-applicable"`, and
+  `assurance_status = "metadata-checked"`. Both also require
   `agent_trace_status = "metadata-checked"`. This means the adapter checked
   bounded metadata; it is not a claim that the agent's reasoning was safe.
 

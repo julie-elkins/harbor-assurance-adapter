@@ -37,6 +37,20 @@ pass rate.
 - Pilot runs and matched comparison runs remain separate evidence sets; a
   follow-up task must not be added to a leaderboard-style denominator.
 
+## Assurance finding: benchmark success is not trajectory evidence
+
+We verified that a successful benchmark run did not automatically guarantee
+that the expected trajectory artifact was present. In a controlled Claude Code
+smoke run, the agent produced a complete local JSONL event log, but Harbor did
+not produce an ATIF trajectory file. The assurance adapter detected the
+discrepancy, refused to mislabel the run as ATIF-verified, and added an
+explicitly labelled fallback path for the available event-log metadata.
+
+This finding demonstrates the value of testing the evidence pipeline separately
+from benchmark scoring: a task can pass while the execution evidence contract
+is incomplete. The adapter keeps the raw log local and publishes only bounded
+metadata such as event counts, tool-call counts, statuses, and digests.
+
 The declared cost is a preflight estimate, not a provider billing guarantee.
 The command is never run until the estimate is within the configured ceiling.
 
@@ -120,8 +134,11 @@ stop-condition estimate, not a provider billing guarantee.
 The second comparison profile is
 `config/claude-code-live-2.0.toml`. Harbor installs Claude Code at the pinned
 2.1.319 release, limits the agent to a declared $15 per-task budget, and emits
-the same ATIF-compatible trajectory contract. The profile has been validated
-locally and has completed one controlled task.
+the same metadata-only receipt contract. The adapter records native ATIF
+(Agent Trajectory Interchange Format) evidence when Harbor produces it and
+uses an explicitly labelled JSONL event-log source when ATIF is absent. The
+profile has been validated locally and has completed controlled tasks under
+both evidence conditions.
 
 The third comparison profile is `config/codex-live-2.0.toml`. It passes only
 `OPENAI_API_KEY` to Harbor, pins the published Codex npm release `0.167.0`,
@@ -160,7 +177,9 @@ This first slice is a receipt/protocol projection, not a claim that AAH has
 evaluated the coding agent's internal tool decisions. A local ATIF (Agent
 Trajectory Interchange Format) scan checks the supported trajectory schema
 versions, step/tool-call counts, and digest; it does not inspect or export
-trajectory content.
+trajectory content. For the current Claude Code profile, a metadata-only scan
+of the local JSONL event log is used when ATIF is missing; the receipt names
+that source explicitly.
 
 ## Tests
 
