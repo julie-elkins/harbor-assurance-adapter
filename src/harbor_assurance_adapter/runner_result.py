@@ -107,7 +107,15 @@ def _verifier_failure_observation(
 
 def _has_provider_quota_marker(text: str) -> bool:
     normalized = re.sub(r"\s+", " ", text.lower())
-    return "usage limit" in normalized or "rate limit" in normalized
+    return any(
+        marker in normalized
+        for marker in (
+            "usage limit",
+            "rate limit",
+            "quota",
+            "billing limit",
+        )
+    )
 
 
 def _trace_is_incomplete(trial_root: Path) -> bool:
@@ -181,14 +189,15 @@ def _failure_observation(
             )
             if _has_provider_quota_marker(message):
                 return "ProviderQuotaExceeded", "provider"
-            agent_log_path = (
-                result_root / trial_name / "agent" / "mini-swe-agent.txt"
-            )
-            try:
-                agent_log = agent_log_path.read_text(encoding="utf-8")
-            except (OSError, UnicodeError):
-                agent_log = ""
-            if _has_provider_quota_marker(agent_log):
+            agent_logs = []
+            for agent_log_path in (
+                result_root / trial_name / "agent"
+            ).glob("*.txt"):
+                try:
+                    agent_logs.append(agent_log_path.read_text(encoding="utf-8"))
+                except (OSError, UnicodeError):
+                    continue
+            if any(_has_provider_quota_marker(log) for log in agent_logs):
                 return "ProviderQuotaExceeded", "provider"
             if _trace_is_incomplete(result_root / trial_name):
                 return "AgentExecutionIncomplete", "agent-execution"
