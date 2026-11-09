@@ -141,3 +141,190 @@ is active. First merge and publish the receipt-classification change. When a
 funded, usable provider workspace is available, run one bounded smoke task,
 verify its receipt, and only then decide whether another matched cohort is
 worth its declared cost.
+
+## 2026-11-09 — Run the quota-unblocked mini-swe-agent cohort
+
+### Finding
+
+The post-limit one-task smoke proved that the provider and execution path were
+available, although the smoke task itself failed benchmark verification. The
+ten-task cohort then reached 10/10 terminal states with no provider-quota
+refusals.
+
+### Result
+
+Nine of 10 tasks were clean executions. All nine produced benchmark
+observations; six passed and three failed task verification. One task,
+`qemu-startup`, failed during agent setup and was excluded from the benchmark
+accuracy denominator.
+
+The public metrics are:
+
+```text
+execution_completion_rate = 9/10 = 0.90
+benchmark_observation_rate = 9/9 = 1.00
+conditional_benchmark_pass_rate = 6/9 = 0.6667
+overall_attempted_task_pass_rate = 6/10 = 0.60
+observed_cost_usd = 16.182813
+```
+
+### Decision
+
+Publish the public-safe per-task report at
+`docs/results/mini-swe-agent-comparison-10-v3.json`, and report the QEMU
+setup failure separately from benchmark correctness.
+
+### Instead of
+
+Calling the cohort a 10/10 accuracy result, counting the setup failure as a
+benchmark failure, or rerunning successful tasks.
+
+### Verification
+
+The receipt records `runner_completed_trials = 10`,
+`runner_successful_trials = 9`, `runner_errored_trials = 1`,
+`benchmark_status = "not-run"` at the aggregate receipt level because Harbor
+was not completely clean, and `atif_scan_status = "passed"`. The public job
+summarizer recovers the valid per-task benchmark observations without
+publishing raw execution content.
+
+### Next investigation
+
+Diagnose the isolated `qemu-startup` agent-setup failure before treating this
+cohort as a fully clean matched comparison. The current result is already
+valid evidence for partial execution reliability and conditional benchmark
+performance.
+
+## 2026-11-09 — Diagnose the mini-swe-agent qemu-startup setup failure
+
+### Finding
+
+The `qemu-startup` trial did not reach model execution or benchmark
+verification. Harbor's agent setup (installing the runner before it starts)
+failed while running mini-swe-agent's root package command:
+
+```text
+apt-get update && apt-get install -y curl build-essential git
+```
+
+The cached public image is Debian Bullseye. A local Finch reproduction against
+the same image showed that the live `bullseye-security` mirror returned HTTP
+404 errors for advertised package versions, including packages needed by
+`curl`, `git`, and their dependencies. This is a package-source compatibility
+failure, not evidence that the model failed the QEMU task.
+
+### Decision
+
+Extend the existing bounded Bullseye archive fallback in `bin/docker` to cover
+mini-swe-agent's exact package set, then verify the rewritten command with a
+synthetic shim test and one isolated setup smoke before considering a rerun of
+the matched cohort.
+
+### Instead of
+
+Rerunning the ten-task cohort unchanged, counting `qemu-startup` as a benchmark
+failure, or changing the public task image and package set.
+
+### Why
+
+The unmodified command failed reproducibly with package-download 404s. The
+same command succeeded in the identical image when only the stale security
+mirror was replaced with Debian's archive and APT's expired-index check was
+disabled. A bounded rewrite preserves the task image and requested packages
+while addressing the observed failure mechanism.
+
+### Costs if wrong
+
+The fix could mask a different package-install problem if the original
+failure was transient. To control that risk, the next verification must prove
+both the command rewrite and an end-to-end isolated setup; no leaderboard claim
+will be revised from this diagnosis alone.
+
+### Verification
+
+The unmodified setup exited 100 with multiple security-mirror 404s. The
+archive-fallback setup installed all requested packages successfully. No
+provider call or paid model execution was used for this reproduction.
+
+## 2026-11-09 — Implement the bounded mini-swe-agent setup repair
+
+### Change
+
+The Finch/Docker shim now recognizes only the two known Harbor setup package
+commands: Codex's `curl ripgrep` set and mini-swe-agent's
+`curl build-essential git` set. It prefixes a small shell function that applies
+the Bullseye archive fallback only when the image declares
+`bullseye-security`; other package commands pass through unchanged.
+
+The reproducible one-task profile is
+`config/mini-swe-agent-qemu-setup-smoke-2.0.toml`.
+
+### Verification
+
+The shell syntax check passed, and the standard-library suite passed all 48
+tests. The shim regression test verifies both supported package sets and
+verifies that an unrelated `curl git` command is not rewritten. A direct
+Finch run of the exact archive-fallback setup against
+`alexgshaw/qemu-startup:20251031` installed all requested packages.
+
+At this implementation checkpoint, the end-to-end Harbor smoke had not started
+because `ANTHROPIC_API_KEY` was absent from both the current and login-shell
+environments. No provider call or paid model execution had yet been made; the
+subsequent validation is recorded below.
+
+### Next gate
+
+Load the already-authorized Anthropic credential into the local shell, run the
+one-task mini-swe-agent qemu setup smoke, and inspect its receipt. Only a clean
+setup and agent execution should justify considering another matched cohort.
+
+## 2026-11-09 — Validate the mini-swe-agent setup repair
+
+### Result
+
+The isolated mini-swe-agent `qemu-startup` smoke completed successfully after
+the shim update. Agent setup completed, the agent executed the task, and the
+Terminal-Bench verifier returned a passing score:
+
+```text
+runner_successful_trials = 1
+runner_errored_trials = 0
+benchmark_status = passed
+benchmark_score = 1.0
+atif_scan_status = passed
+atif_step_count = 74
+atif_tool_call_count = 72
+observed_cost_usd = 1.306460
+```
+
+### Decision
+
+Treat the Bullseye package-source compatibility issue as repaired for this
+runner/image path. Keep the original ten-task v3 report unchanged and retain
+the smoke as separate diagnostic evidence.
+
+### Instead of
+
+Retroactively changing the v3 cohort from 9/10 clean executions to 10/10, or
+rerunning the entire cohort solely to replace one setup failure.
+
+### Why
+
+The targeted smoke proves that the exact failed task can now pass through
+environment setup, mini-swe-agent execution, verification, and the metadata
+assurance scan. It does not prove that the historical cohort was run under the
+same shim, so changing its denominator would make the public study less
+reproducible.
+
+### Verification
+
+The receipt is
+`runs/mini-swe-agent-qemu-setup-smoke-v1.receipt.json`. The per-task result
+contains a normal agent result, a passing verifier result, and no exception.
+The original v3 report remains a historical pre-fix cohort result; the smoke
+is a post-fix diagnostic confirmation.
+
+### Next step
+
+Review and publish the shim, test, profile, and study-log changes. After that,
+decide whether a fresh full matched cohort is worth its provider cost.
