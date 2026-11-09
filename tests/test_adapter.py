@@ -174,6 +174,42 @@ argv = ["harbor", "run", "--env", "OPENAI_API_KEY=synthetic-secret"]
             with self.assertRaisesRegex(ValueError, "literal OPENAI_API_KEY value"):
                 load_config(path)
 
+    def test_provider_backed_harbor_config_requires_argv_safe_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "missing-safe-environment.toml"
+            path.write_text(
+                """
+[run]
+benchmark = "terminal-bench"
+benchmark_revision = "2.0"
+agent = "codex"
+agent_revision = "0.167.0"
+model = "openai/gpt-5.5"
+provider = "openai"
+harness = "harbor"
+harness_revision = "0.9.0"
+pass_env = ["OPENAI_API_KEY"]
+workdir = "."
+raw_run_dir = "runs"
+
+[budget]
+max_total_cost_usd = 1.0
+estimated_cost_per_task_usd = 0.1
+task_count = 1
+attempts = 1
+timeout_seconds = 60.0
+max_output_bytes = 1024
+stop_condition = "stop-after-one-task"
+
+[command]
+argv = ["harbor", "run", "--env", "docker"]
+""",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "argv-safe credential environment"):
+                load_config(path)
+
     def test_claude_code_config_is_pinned_and_budgeted(self) -> None:
         repository = Path(__file__).parents[1]
         run_config = load_config(repository / "config" / "claude-code-live-2.0.toml")

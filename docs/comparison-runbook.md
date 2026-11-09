@@ -6,7 +6,10 @@ concurrent task, and the same Finch compatibility shim. The purpose is to
 compare runner behavior under the same task and environment conditions.
 
 Run these from the repository root, with the provider credential already
-configured in the local shell:
+configured in the local shell. The configurations select the repository's
+argv-safe Harbor environment; do not remove that option or substitute an
+older profile, because the run must not place the provider value in Docker
+command arguments.
 
 ```text
 cd /Users/julielk/projects/harbor-assurance-adapter

@@ -77,6 +77,26 @@ advertise package versions it no longer serves. Newer images keep their
 normal package sources; the shim does not change the installed package set or
 rewrite unrelated APT commands.
 
+## Provider credential boundary
+
+Provider credentials cross three local process boundaries: the adapter starts
+Harbor, Harbor starts Docker-compatible commands, and the Finch shim starts the
+container runtime. A credential is not safe merely because it is absent from
+the final Finch command; an intermediate Docker command can expose it first.
+
+Provider-backed profiles therefore use
+`CredentialSafeDockerEnvironment`, a custom Harbor environment. It removes
+secret-valued per-command variables before Harbor builds Docker arguments,
+copies each value through a temporary path-only transfer, and loads it inside
+the container shell. The configuration validator requires this environment
+hook whenever a Harbor command has a provider allow-list. The Finch shim
+remains an independent downstream check.
+
+The invariant is: a provider value may exist in process memory and in the
+container's protected runtime context, but it must not appear in any
+intermediate process `argv` (the process-visible argument list), captured
+output, receipt, or public report.
+
 ## Runner profiles
 
 The first runner is mini-swe-agent because its linear trajectory is straightforward

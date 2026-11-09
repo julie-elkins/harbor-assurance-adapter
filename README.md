@@ -126,11 +126,23 @@ out of the Finch process command line, where local process inspection tools
 could otherwise see it. Other Harbor execution variables remain on the direct
 exec command because they contain control flags, not credentials.
 
+Harbor itself can create a second exposure before the shim is called: its Docker
+environment may render an agent credential as `-e NAME=value` in the Docker
+command arguments. Provider-backed configurations therefore select the
+repository's `CredentialSafeDockerEnvironment` through Harbor's custom
+environment hook. That environment uploads the value through a path-only
+container copy and loads it inside the shell command by variable name. This
+keeps the value out of Harbor, Docker, and Finch `argv` (the process-visible
+argument list), not only out of Finch's final command.
+
 The adapter also rejects a configuration that embeds a literal provider secret
 in its command argument vector, called `argv` (the process-visible argument
 list). Credentials must arrive through the named `pass_env` allow-list instead.
 The shim removes secret-valued environment assignments before launching Finch,
 creates a protected temporary file, and deletes it when the Finch process exits.
+Configuration validation refuses provider-backed Harbor commands that omit the
+argv-safe environment hook, so a future profile cannot silently reintroduce the
+older transport.
 
 The selected model provider also needs a locally configured credential. Do not put
 the credential in this repository or send it in chat. The Harbor process receives
