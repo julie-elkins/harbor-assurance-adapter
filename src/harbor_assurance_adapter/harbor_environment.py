@@ -13,15 +13,13 @@ The design rules are:
 from __future__ import annotations
 
 import asyncio
-import os
 import shlex
-import tempfile
 import uuid
-from pathlib import Path
 
 from harbor.environments.docker.docker import DockerEnvironment
 
 from .credential_transport import (
+    materialize_secret,
     secret_loader_command,
     split_secret_environment,
 )
@@ -42,16 +40,8 @@ class CredentialSafeDockerEnvironment(DockerEnvironment):
             target = f"{self._secret_target_prefix}{uuid.uuid4().hex}"
             self._credential_targets[name] = target
 
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            prefix="harbor-assurance-credential-",
-            delete=True,
-        ) as secret_file:
-            os.chmod(secret_file.name, 0o600)
-            secret_file.write(value)
-            secret_file.flush()
-            await super().upload_file(secret_file.name, target)
+        with materialize_secret(value) as secret_file:
+            await super().upload_file(secret_file, target)
 
         # Docker Compose copies the file with host-oriented ownership. Give
         # ownership to Harbor's resolved agent user and keep the file private
