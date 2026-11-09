@@ -104,6 +104,7 @@ def make_receipt(
         atif_tool_call_count=atif_tool_call_count,
         failure_kind=runner_result.failure_kind,
         failure_phase=runner_result.failure_phase,
+        failure_breakdown=runner_result.failure_breakdown,
         agent_trace_status=agent_trace.status,
         agent_event_count=agent_trace.event_count,
         agent_tool_call_count=agent_trace.tool_call_count,

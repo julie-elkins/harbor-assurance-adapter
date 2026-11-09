@@ -79,6 +79,9 @@ def _response(request: dict[str, object], receipt_path: Path | None) -> dict[str
             "atif_tool_call_count": receipt.atif_tool_call_count if receipt else None,
             "failure_kind": receipt.failure_kind if receipt else None,
             "failure_phase": receipt.failure_phase if receipt else None,
+            "failure_breakdown": (
+                receipt.failure_breakdown if receipt else None
+            ),
             "agent_trace_status": receipt.agent_trace_status if receipt else "synthetic",
             "agent_event_count": receipt.agent_event_count if receipt else None,
             "agent_tool_call_count": (
