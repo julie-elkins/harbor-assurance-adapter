@@ -110,12 +110,13 @@ Astral release mirror. This is a dependency-transport repair for transient
 GitHub download failures; it leaves the verifier script, pinned test
 dependencies, and scoring logic unchanged.
 
-For Codex setup on Debian-based task images, the shim adds bounded APT archive
-retries. APT is the Debian package manager. The public `qemu-startup` task uses
-old Bullseye metadata whose live security mirror points at removed package
-archives, so the shim uses Debian's matching archive only when
-`bullseye-security` is present. It does not add packages or change the task
-image.
+For Debian-based task images, the shim adds bounded APT archive retries to the
+two known Harbor setup commands used by Codex and mini-swe-agent. APT is the
+Debian package manager. The public `qemu-startup` task uses old Bullseye
+metadata whose live security mirror points at removed package archives, so the
+shim uses Debian's matching archive only when `bullseye-security` is present.
+The rewrite is limited to the known package sets; it does not add packages or
+change the task image.
 
 For provider secrets, the shim writes a user-readable-only temporary `env_file`
 and uses Finch's direct `exec --env-file` path for agent commands. This applies
@@ -185,6 +186,12 @@ The setup-smoke profile is
 `config/codex-qemu-setup-smoke-2.0.toml`. It selects only `qemu-startup` to
 check whether the Debian package-retry repair lets Codex start. This is
 diagnostic evidence, not a replacement for the original matched cohort.
+
+The mini-swe-agent setup-smoke profile is
+`config/mini-swe-agent-qemu-setup-smoke-2.0.toml`. It selects the same
+`qemu-startup` task with mini-swe-agent so the package-retry repair can be
+checked on the runner that originally failed during setup. This is diagnostic
+evidence, not a replacement for the original matched cohort.
 
 ## Run the local AAH projection
 

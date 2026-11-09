@@ -117,17 +117,42 @@ if [ "$1" = "compose" ]; then
                         sed 's#curl -LsSf https://astral.sh/uv/0.7.13/install.sh | sh#export INSTALLER_DOWNLOAD_URL=https://releases.astral.sh/github/uv/releases/download/0.7.13; curl --retry 5 --retry-delay 5 --retry-max-time 180 -LsSf https://astral.sh/uv/0.7.13/install.sh | sh#')
                     ;;
             esac
+            apt_command=
+            apt_packages=
             case "$compose_command" in
                 *"apt-get update && apt-get install -y curl ripgrep;"*)
-                    # Harbor installs Codex's host tools inside each task
-                    # container. The public qemu task uses old Bullseye
-                    # metadata whose security mirror points at removed
-                    # package archives; use the matching Debian archive for
-                    # that image and keep bounded retries for downloads.
-                    compose_command=$(printf '%s' "$compose_command" |
-                        sed 's~apt-get update && apt-get install -y curl ripgrep;~if grep -Rqs bullseye-security /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null; then sed -i \"s#http://deb.debian.org/debian-security#http://archive.debian.org/debian-security#g; s#https://deb.debian.org/debian-security#http://archive.debian.org/debian-security#g; s#http://security.debian.org/debian-security#http://archive.debian.org/debian-security#g\" /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null || true; apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Retries=5 update \&\& apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Retries=5 install -y curl ripgrep; else apt-get -o Acquire::Retries=5 update \&\& apt-get -o Acquire::Retries=5 install -y curl ripgrep; fi;~')
+                    apt_command="apt-get update && apt-get install -y curl ripgrep;"
+                    apt_packages="curl ripgrep"
+                    ;;
+                *"apt-get update && apt-get install -y curl build-essential git;"*)
+                    # mini-swe-agent installs its build tools through the
+                    # same old Bullseye task-image path. Keep this exact
+                    # package set separate from unrelated apt commands.
+                    apt_command="apt-get update && apt-get install -y curl build-essential git;"
+                    apt_packages="curl build-essential git"
                     ;;
             esac
+            if [ -n "$apt_command" ]; then
+                # Replace only the known command fragment with a marker. The
+                # longer fallback is prefixed as shell code below so the
+                # rewrite remains portable on macOS BSD sed and in Finch.
+                compose_command=$(printf '%s' "$compose_command" |
+                    sed "s~$apt_command~harbor_bullseye_apt;~")
+                apt_fallback_prefix='
+HARBOR_APT_PACKAGES="'"$apt_packages"'"
+harbor_bullseye_apt() {
+    if grep -Rqs bullseye-security /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null; then
+        sed -i "s#http://deb.debian.org/debian-security#http://archive.debian.org/debian-security#g; s#https://deb.debian.org/debian-security#http://archive.debian.org/debian-security#g; s#http://security.debian.org/debian-security#http://archive.debian.org/debian-security#g" /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null || true
+        apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Retries=5 update &&
+            apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Retries=5 install -y $HARBOR_APT_PACKAGES
+    else
+        apt-get -o Acquire::Retries=5 update &&
+            apt-get -o Acquire::Retries=5 install -y $HARBOR_APT_PACKAGES
+    fi
+}
+'
+                compose_command="$apt_fallback_prefix$compose_command"
+            fi
             case "$compose_command" in
                 *"/tests/test.sh"*)
                     # Terminal-Bench's published verifiers install their

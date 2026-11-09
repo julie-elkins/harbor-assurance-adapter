@@ -282,7 +282,7 @@ class DockerShimTests(unittest.TestCase):
             )
             self.assertIn("bash /tests/test.sh", rewritten)
 
-    def test_codex_apt_setup_uses_bullseye_archive_fallback(self) -> None:
+    def test_known_apt_setups_use_bullseye_archive_fallback(self) -> None:
         repository = Path(__file__).parents[1]
         shim = repository / "bin" / "docker"
 
@@ -302,6 +302,75 @@ class DockerShimTests(unittest.TestCase):
             environment["PATH"] = f"{fake_bin}:{environment['PATH']}"
             environment["FAKE_FINCH_ARGS"] = str(captured_args)
 
+            for package_set in ("curl ripgrep", "curl build-essential git"):
+                with self.subTest(package_set=package_set):
+                    if captured_args.exists():
+                        captured_args.unlink()
+                    command = (
+                        "apt-get update && "
+                        f"apt-get install -y {package_set};"
+                    )
+                    result = subprocess.run(
+                        (
+                            str(shim),
+                            "compose",
+                            "-p",
+                            "harbor",
+                            "exec",
+                            "-T",
+                            "main",
+                            "sh",
+                            "-c",
+                            command,
+                        ),
+                        env=environment,
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    encoded_command = next(
+                        line
+                        for line in captured_args.read_text(
+                            encoding="utf-8"
+                        ).splitlines()
+                        if line.startswith("echo ")
+                        and line.endswith(" | base64 -d | bash")
+                    )
+                    encoded = encoded_command.removeprefix("echo ").removesuffix(
+                        " | base64 -d | bash"
+                    )
+                    rewritten = base64.b64decode(encoded).decode("utf-8")
+                    self.assertIn(
+                        "grep -Rqs bullseye-security /etc/apt/sources.list",
+                        rewritten,
+                    )
+                    self.assertIn(
+                        "http://archive.debian.org/debian-security",
+                        rewritten,
+                    )
+                    self.assertIn(
+                        "Acquire::Check-Valid-Until=false",
+                        rewritten,
+                    )
+                    self.assertIn(
+                        f'HARBOR_APT_PACKAGES="{package_set}"',
+                        rewritten,
+                    )
+                    self.assertIn(
+                        "install -y $HARBOR_APT_PACKAGES",
+                        rewritten,
+                    )
+                    self.assertIn(
+                        "else\n        apt-get -o Acquire::Retries=5 update",
+                        rewritten,
+                    )
+                    self.assertIn(
+                        "apt-get -o Acquire::Retries=5 update",
+                        rewritten,
+                    )
+
             result = subprocess.run(
                 (
                     str(shim),
@@ -313,7 +382,7 @@ class DockerShimTests(unittest.TestCase):
                     "main",
                     "sh",
                     "-c",
-                    "apt-get update && apt-get install -y curl ripgrep;",
+                    "apt-get update && apt-get install -y curl git;",
                 ),
                 env=environment,
                 capture_output=True,
@@ -330,24 +399,11 @@ class DockerShimTests(unittest.TestCase):
             encoded = encoded_command.removeprefix("echo ").removesuffix(
                 " | base64 -d | bash"
             )
-            rewritten = base64.b64decode(encoded).decode("utf-8")
-            self.assertIn(
-                "grep -Rqs bullseye-security /etc/apt/sources.list",
-                rewritten,
-            )
-            self.assertIn(
-                "http://archive.debian.org/debian-security",
-                rewritten,
-            )
-            self.assertIn(
-                "Acquire::Check-Valid-Until=false",
-                rewritten,
-            )
-            self.assertIn("install -y curl ripgrep", rewritten)
-            self.assertIn("else apt-get -o Acquire::Retries=5 update", rewritten)
-            self.assertIn(
-                "apt-get -o Acquire::Retries=5 update",
-                rewritten,
+            unchanged = base64.b64decode(encoded).decode("utf-8")
+            self.assertNotIn("archive.debian.org", unchanged)
+            self.assertEqual(
+                unchanged,
+                "apt-get update && apt-get install -y curl git;",
             )
 
 
