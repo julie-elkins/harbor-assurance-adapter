@@ -27,6 +27,8 @@ pass rate.
 - Evaluation target: a matched 10-task public Terminal-Bench 2.0 cohort.
 - Public study contract: [evaluation-manifest.toml](docs/evaluation-manifest.toml)
   and [metrics.md](docs/metrics.md).
+- Decision and pivot history:
+  [study-log.md](docs/study-log.md).
 - Matched-run procedure:
   [comparison-runbook.md](docs/comparison-runbook.md).
 - Public per-task results are generated with the `summarize-job` command and
@@ -53,6 +55,20 @@ metadata such as event counts, tool-call counts, statuses, and digests.
 
 The declared cost is a preflight estimate, not a provider billing guarantee.
 The command is never run until the estimate is within the configured ceiling.
+
+## Mixed-failure reporting
+
+An errored multi-task run can expose more than one failure signal. The receipt
+therefore records `failure_kind = "MixedFailures"` when the evidence contains
+multiple categories and includes a bounded `failure_breakdown` such as
+`ProviderQuotaExceeded`, `AgentSetupFailure`, and `AgentTimeoutError`.
+
+`failure_breakdown` counts evidence signals, not a disjoint task partition. One
+task can expose a provider refusal and then time out while the runner is
+unwinding it, so the category counts can sum to more than the number of
+errored tasks. This preserves the distinction between provider availability,
+agent setup, and runtime failure without exporting prompts, provider responses,
+credentials, or raw trajectories.
 
 ## Validate without executing
 

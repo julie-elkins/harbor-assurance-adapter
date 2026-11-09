@@ -192,6 +192,7 @@ class RunReceipt:
     atif_tool_call_count: int | None = None
     failure_kind: str | None = None
     failure_phase: str | None = None
+    failure_breakdown: dict[str, int] | None = None
     agent_trace_status: str = "not-run"
     agent_event_count: int | None = None
     agent_tool_call_count: int | None = None
@@ -263,6 +264,15 @@ class RunReceipt:
             value = getattr(self, field_name)
             if value is not None:
                 identifier(value, field_name)
+        if self.failure_breakdown is not None:
+            if not self.failure_breakdown:
+                raise ValueError("failure_breakdown must not be empty.")
+            for key, value in self.failure_breakdown.items():
+                identifier(key, "failure_breakdown key")
+                if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                    raise ValueError(
+                        "failure_breakdown values must be positive integers."
+                    )
         if self.agent_event_count is not None and (
             isinstance(self.agent_event_count, bool)
             or not isinstance(self.agent_event_count, int)

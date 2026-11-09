@@ -200,6 +200,88 @@ class RunnerResultTests(unittest.TestCase):
         self.assertEqual(result.failure_kind, "ProviderQuotaExceeded")
         self.assertEqual(result.failure_phase, "provider")
 
+    def test_mixed_failure_breakdown_preserves_each_trial_cause(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            result_path = root / "job" / "result.json"
+            result_path.parent.mkdir()
+            for name in ("quota-trial", "setup-trial", "timeout-trial"):
+                (result_path.parent / name).mkdir()
+
+            (result_path.parent / "quota-trial" / "result.json").write_text(
+                json.dumps(
+                    {
+                        "agent_execution": {
+                            "started_at": "2026-11-08T00:00:00Z",
+                            "finished_at": "2026-11-08T00:00:01Z",
+                        },
+                        "exception_info": {"exception_message": "exit 1"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (result_path.parent / "quota-trial" / "agent").mkdir()
+            (
+                result_path.parent
+                / "quota-trial"
+                / "agent"
+                / "mini-swe-agent.trajectory.json"
+            ).write_text(
+                '{"error":"specified API usage limits"}',
+                encoding="utf-8",
+            )
+            (result_path.parent / "setup-trial" / "result.json").write_text(
+                json.dumps({"agent_execution": None}),
+                encoding="utf-8",
+            )
+            (result_path.parent / "timeout-trial" / "result.json").write_text(
+                json.dumps(
+                    {
+                        "agent_execution": {
+                            "started_at": "2026-11-08T00:00:00Z",
+                            "finished_at": "2026-11-08T01:00:00Z",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result_path.write_text(
+                json.dumps(
+                    {
+                        "n_total_trials": 3,
+                        "stats": {
+                            "n_completed_trials": 3,
+                            "n_errored_trials": 3,
+                            "cost_usd": 11.98,
+                            "exception_stats": {
+                                "AgentTimeoutError": [
+                                    "quota-trial",
+                                    "timeout-trial",
+                                ],
+                                "NonZeroAgentExitCodeError": [
+                                    "quota-trial",
+                                    "setup-trial",
+                                ],
+                            },
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = latest_result(root, time.time() - 1)
+
+        self.assertEqual(result.failure_kind, "MixedFailures")
+        self.assertEqual(result.failure_phase, "runner")
+        self.assertEqual(
+            result.failure_breakdown,
+            {
+                "AgentSetupFailure": 1,
+                "AgentTimeoutError": 2,
+                "ProviderQuotaExceeded": 1,
+            },
+        )
+
     def test_incomplete_agent_trace_is_distinguished_from_generic_exit(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
