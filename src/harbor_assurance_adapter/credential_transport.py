@@ -10,8 +10,13 @@ The design rules are:
 
 from __future__ import annotations
 
+import os
 import shlex
 from collections.abc import Mapping
+from contextlib import contextmanager
+from pathlib import Path
+import tempfile
+from typing import Iterator
 
 _EXACT_SECRET_ENV_NAMES = frozenset(
     {
@@ -20,6 +25,35 @@ _EXACT_SECRET_ENV_NAMES = frozenset(
         "MSWEA_API_KEY",
     }
 )
+
+
+def host_temp_directory() -> Path:
+    """Return a host path visible to Finch's Docker Compose boundary."""
+
+    finch_temp = Path("/private/tmp")
+    if finch_temp.is_dir():
+        return finch_temp
+    return Path(tempfile.gettempdir())
+
+
+@contextmanager
+def materialize_secret(value: str) -> Iterator[Path]:
+    """Materialize one secret for upload, then remove it deterministically."""
+
+    file_descriptor, raw_path = tempfile.mkstemp(
+        prefix="harbor-assurance-credential-",
+        dir=host_temp_directory(),
+    )
+    path = Path(raw_path)
+    try:
+        os.chmod(path, 0o600)
+        with os.fdopen(file_descriptor, "w", encoding="utf-8") as secret_file:
+            secret_file.write(value)
+            secret_file.flush()
+            os.fsync(secret_file.fileno())
+        yield path
+    finally:
+        path.unlink(missing_ok=True)
 
 
 def is_secret_env_name(name: str) -> bool:

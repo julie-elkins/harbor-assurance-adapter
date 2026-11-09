@@ -371,3 +371,153 @@ is a post-fix diagnostic confirmation.
 
 Review and publish the shim, test, profile, and study-log changes. After that,
 decide whether a fresh full matched cohort is worth its provider cost.
+
+## 2026-11-09 — Review the post-hardening mini-swe-agent follow-up
+
+### Result
+
+The follow-up ten-task run reached all ten terminal states, but two tasks
+errored. The metadata receipt classified the run as `MixedFailures` and
+preserved these overlapping signals:
+
+```text
+runner_completed_trials = 10
+runner_successful_trials = 8
+runner_errored_trials = 2
+execution_completion_rate = 8/10 = 0.80
+failure_breakdown = {
+  AgentTimeoutError: 2,
+  ProviderQuotaExceeded: 1
+}
+benchmark_status = not-run
+atif_scan_status = passed
+observed_cost_usd = 23.244097
+```
+
+The provider-quota count is a signal count, not a task count. One errored task
+can expose more than one failure signal while Harbor is unwinding the attempt.
+The public aggregate report is
+`docs/results/mini-swe-agent-comparison-10-v4.json`.
+
+### Decision
+
+Treat v4 as diagnostic evidence about execution reliability, not as a
+benchmark comparison result. Do not calculate an accuracy score from this
+receipt, and do not attribute the timeout signals to the credential transport
+without task-level evidence.
+
+### Instead of
+
+Calling the run an 8/10 benchmark result, converting the two errored tasks into
+benchmark failures, or treating the presence of a provider-quota signal as
+proof that the new transport hook caused the failure.
+
+### Why
+
+The runner was not clean, so the adapter correctly withheld the aggregate
+benchmark score. The ATIF (Agent Trajectory Interchange Format, the structured
+execution trace) metadata check passed, which confirms that assurance metadata
+was recorded, but it does not establish task correctness or provider health.
+
+### Costs if wrong
+
+Keeping v4 diagnostic-only means it contributes an execution-reliability
+observation but not a leaderboard accuracy number. That is less visually
+complete, but publishing an unsupported score would make the public study
+misleading.
+
+### Next controlled step
+
+Revoke the previously exposed Anthropic key and load a newly issued key.
+Before another paid cohort, run one bounded mini-swe-agent smoke with the
+argv-safe environment hook, inspect the receipt, and verify through local
+process inspection that the secret is absent from Harbor, Docker, and Finch
+argument vectors. Only a clean post-rotation smoke should be treated as live
+verification of the credential remediation. A new ten-task cohort remains
+optional and should wait until the smoke is clean.
+
+## 2026-11-09 — Diagnose the post-rotation credential smoke
+
+### Finding
+
+The post-rotation one-task smoke did not reach model execution. Harbor's
+`CredentialSafeDockerEnvironment` created the temporary credential file under
+`/tmp`, but Finch's Docker Compose copy boundary reported that the source file
+did not exist. The receipt recorded one `RuntimeError`, no provider cost, no
+ATIF (Agent Trajectory Interchange Format, the structured execution trace)
+artifact, and no benchmark result.
+
+### Decision
+
+Create the temporary file in Finch's host-visible `/private/tmp` directory
+when available, close the file before invoking Docker Compose, keep the path
+alive until the upload returns, and delete it in a deterministic cleanup
+block.
+
+### Instead of
+
+Retrying with the rotated key, weakening the argv-safe transport, or treating
+the runtime error as an Anthropic quota refusal.
+
+### Why
+
+The failure occurred while copying the file into the container, before the
+agent received the credential and before a provider request could be priced.
+The key rotation therefore remains valid; the transport implementation was the
+blocking defect.
+
+### Verification
+
+The regression test verifies the Finch-visible path, mode `0600`, exact
+secret-file contents, and cleanup after the upload context exits. A new
+non-paid synthetic boundary probe and one bounded post-fix smoke are required
+before calling the credential remediation live-verified.
+
+## 2026-11-09 — Validate the repaired credential transport
+
+### Result
+
+The bounded post-fix mini-swe-agent smoke completed successfully with the
+rotated Anthropic credential:
+
+```text
+runner_completed_trials = 1
+runner_successful_trials = 1
+runner_errored_trials = 0
+benchmark_status = passed
+benchmark_score = 1.0
+atif_scan_status = passed
+atif_step_count = 105
+atif_tool_call_count = 103
+observed_cost_usd = 9.449655
+```
+
+The public-safe diagnostic report is
+`docs/results/mini-swe-agent-credential-transport-post-fix-v2.json`.
+
+### Decision
+
+Treat the credential transport as live-smoke-verified for this
+mini-swe-agent/Finch/Harbor path. Keep this one-task result separate from the
+historical and matched ten-task cohorts.
+
+### Instead of
+
+Calling the transport fully proven across every Harbor version, container
+image, provider, or agent, or adding this smoke to a ten-task accuracy
+denominator.
+
+### Why
+
+The smoke demonstrates a real agent execution, benchmark verification, and
+ATIF (Agent Trajectory Interchange Format, the structured execution trace)
+metadata capture after the transport repair. It is still one task on one
+runner path, so it proves the repaired path works but does not establish
+general cross-environment coverage.
+
+### Next controlled step
+
+Review, stage, commit, and publish the transport fix, tests, documentation,
+and the two public-safe diagnostic reports. After that, run the optional fresh
+mini-swe-agent ten-task cohort only if the additional provider cost is worth
+measuring post-fix execution reliability.

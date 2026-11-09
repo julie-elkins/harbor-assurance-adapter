@@ -1,0 +1,42 @@
+{
+  "schema_version": "run-evaluation-v1",
+  "provenance": {
+    "source": "terminal-bench",
+    "benchmark": "terminal-bench",
+    "benchmark_revision": "2.0",
+    "task_set": "comparison-suite-10",
+    "agent": "mini-swe-agent",
+    "agent_revision": "2.4.6",
+    "model": "anthropic/claude-opus-4-6",
+    "harness": "harbor",
+    "harness_revision": "0.9.0"
+  },
+  "metrics": {
+    "attempted_tasks": 10,
+    "terminal_tasks": 10,
+    "clean_executions": 8,
+    "errored_tasks": 2,
+    "execution_completion_rate": 0.8,
+    "aggregate_benchmark_status": "not-run",
+    "aggregate_benchmark_score": null,
+    "observed_cost_usd": 23.244097
+  },
+  "failure_breakdown": {
+    "AgentTimeoutError": 2,
+    "ProviderQuotaExceeded": 1
+  },
+  "assurance": {
+    "assurance_source": "atif",
+    "assurance_status": "metadata-checked",
+    "atif_scan_status": "passed",
+    "atif_step_count": 30,
+    "atif_tool_call_count": 28
+  },
+  "interpretation": {
+    "status": "diagnostic-only",
+    "reason": "The runner reached all ten terminal states but had two errored tasks, so no aggregate benchmark score is reported.",
+    "raw_trajectories": "local-only",
+    "provider_responses": "excluded",
+    "secrets": "excluded"
+  }
+}

@@ -1,14 +1,35 @@
 from __future__ import annotations
 
+import tempfile
 import unittest
+from pathlib import Path
 
 from harbor_assurance_adapter.credential_transport import (
+    host_temp_directory,
+    materialize_secret,
     secret_loader_command,
     split_secret_environment,
 )
 
 
 class CredentialTransportTests(unittest.TestCase):
+    def test_materialized_secret_uses_finch_visible_path_and_cleans_up(self) -> None:
+        secret = "synthetic-secret-value"
+        expected_directory = (
+            Path("/private/tmp")
+            if Path("/private/tmp").is_dir()
+            else Path(tempfile.gettempdir())
+        )
+
+        with materialize_secret(secret) as path:
+            self.assertEqual(path.parent, host_temp_directory())
+            self.assertEqual(path.parent, expected_directory)
+            self.assertTrue(path.is_file())
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(path.read_text(encoding="utf-8"), secret)
+
+        self.assertFalse(path.exists())
+
     def test_secret_values_are_separated_from_ordinary_environment(self) -> None:
         ordinary, secrets = split_secret_environment(
             {
