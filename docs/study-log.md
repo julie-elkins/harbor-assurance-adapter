@@ -37,6 +37,49 @@ arguments and that the temporary file is removed after the process exits.
 The live Claude Code and mini-swe-agent credential-transport smoke tests
 completed successfully after the change.
 
+## 2026-11-09 — Close the Harbor-to-shim credential gap
+
+### Finding
+
+The first transport hardening change removed provider values from Finch
+arguments, but Harbor v0.9.0 still rendered the agent's per-command
+environment as Docker `-e NAME=value` arguments. Local process inspection
+therefore exposed a second copy of the credential before the Finch shim
+received it.
+
+### Decision
+
+Use Harbor's custom environment hook for every provider-backed profile.
+`CredentialSafeDockerEnvironment` removes secret values before Docker
+argument construction, transfers them through a temporary path-only copy,
+and loads them inside the container shell. Configuration validation refuses
+provider-backed Harbor commands that do not select this environment.
+
+### Instead of
+
+Relying on the Finch shim alone, because that protects only the downstream
+runtime boundary after Harbor has already created the Docker command.
+
+### Why
+
+The exposure was at the Harbor-to-Docker boundary, not the Docker-to-Finch
+boundary. Fixing the shared Harbor environment method closes the source of
+the leak while preserving the agent's expected environment variables inside
+the container.
+
+### Costs if wrong
+
+The custom environment is coupled to Harbor's supported import hook and
+Docker environment interface. A Harbor upgrade could change that interface,
+so the import smoke and synthetic transport tests must run before any paid
+cohort. A failed import must block the run rather than fall back silently to
+the older transport.
+
+### Decided by
+
+Julie and Codex, after tracing Harbor's Docker `exec` construction and the
+local process inspection evidence on 2026-11-09.
+
 ## 2026-11-08 — Correct the mini-swe-agent trajectory finding
 
 ### Finding

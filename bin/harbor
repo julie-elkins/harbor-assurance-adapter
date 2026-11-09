@@ -1,0 +1,24 @@
+#!/bin/sh
+# Load this repository's custom Harbor environment without replacing Harbor.
+#
+# The wrapper adds the repository source tree to PYTHONPATH so Harbor can
+# import CredentialSafeDockerEnvironment through --environment-import-path.
+# It does not receive provider values in its own arguments.
+set -eu
+
+repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+path_without_adapter_bin=${PATH#"$repository_root/bin:"}
+real_harbor=$(PATH=$path_without_adapter_bin command -v harbor || true)
+
+if [ -z "$real_harbor" ]; then
+    printf '%s\n' "harbor executable not found outside the adapter bin directory." >&2
+    exit 127
+fi
+
+if [ -n "${PYTHONPATH:-}" ]; then
+    PYTHONPATH="$repository_root/src:$PYTHONPATH"
+else
+    PYTHONPATH="$repository_root/src"
+fi
+export PYTHONPATH
+exec "$real_harbor" "$@"

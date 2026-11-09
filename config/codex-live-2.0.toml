@@ -49,4 +49,6 @@ argv = [
   "4",
   "--env",
   "docker",
+  "--environment-import-path",
+  "harbor_assurance_adapter.harbor_environment:CredentialSafeDockerEnvironment",
 ]

@@ -134,6 +134,21 @@ class RunConfig:
                     f"command contains a literal {assignment} value; "
                     "pass the environment variable name and use pass_env instead."
                 )
+        if self.pass_env and self.command[0] == "harbor":
+            expected_environment = (
+                "harbor_assurance_adapter.harbor_environment:"
+                "CredentialSafeDockerEnvironment"
+            )
+            if "--environment-import-path" not in self.command:
+                raise ValueError(
+                    "provider-backed Harbor commands must select the "
+                    "argv-safe credential environment."
+                )
+            if expected_environment not in self.command:
+                raise ValueError(
+                    "provider-backed Harbor commands must select the pinned "
+                    "CredentialSafeDockerEnvironment implementation."
+                )
         self.budget.validate()
 
 
