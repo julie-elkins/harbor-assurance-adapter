@@ -152,6 +152,58 @@ verifier's normal two-assertion failure, the pinned task fixture, and the
 corresponding reference path. Raw task data, prompts, provider responses, and
 trajectories remain local-only.
 
+## 2026-11-10 — Validate the Raman unit-contract ablation
+
+### Result
+
+After replacing the ineffective skill injection with a direct extra
+instruction, the one-task ablation completed cleanly and passed all three
+verifier tests. The instruction appeared in the captured task prompt, and the
+agent converted the coordinate system before fitting.
+
+The metadata-only result was:
+
+- 1/1 clean execution
+- 1/1 benchmark observation
+- 1/1 benchmark pass
+- ATIF (Agent Trajectory Interchange Format, the structured execution trace)
+  metadata passed
+- observed cost of `0.198360` USD
+
+### Decision
+
+Treat this as evidence that the missing unit contract was causally relevant to
+the original Raman failure: once the conversion was explicitly delivered, the
+same agent and pinned task passed. Keep it labelled as a diagnostic ablation,
+not as a leaderboard or matched-cohort score.
+
+### Instead of
+
+Editing the Terminal-Bench task or verifier, replacing the original failed
+observation, or adding the ablation pass to the ten-task comparison.
+
+### Why
+
+The benchmark revision, task, model, runner, and credential transport stayed
+constant. The controlled change was the instruction boundary, and the local
+evidence confirms that the added instruction reached the agent before the
+successful fit.
+
+### Costs if wrong
+
+The ablation changes the agent's prompt, so treating its 1/1 result as a
+matched leaderboard result would overstate the original condition. The result
+supports a causal explanation for this task; it does not establish that every
+under-specified benchmark task will respond the same way.
+
+### Verification
+
+The public-safe report is
+`docs/results/mini-swe-agent-raman-unit-contract-ablation-v3.json`. The
+receipt records one completed trial, one benchmark pass, ATIF metadata
+success, and observed cost of `0.198360` USD. Raw task data, prompts,
+provider responses, and trajectories remain local-only.
+
 ### Next controlled step
 
 If we want to measure recoverability, run a separately labelled one-task
