@@ -160,6 +160,52 @@ interpretation-sensitivity check, not as a leaderboard or matched-cohort
 result. Do not spend that additional provider budget unless the diagnostic
 question is worth answering.
 
+## 2026-11-10 — Provider-credit refusal of the Raman ablation
+
+### Finding
+
+The unit-contract ablation did not reach model execution. Anthropic rejected
+the request because the account balance was too low. The adapter recorded a
+provider-backed agent exit, no benchmark result, no output file, and
+`0.0` observed provider cost.
+
+### Decision
+
+Exclude this attempt from both task-correctness and interpretation-sensitivity
+analysis. It is provider-quota evidence only; it does not confirm or
+disconfirm whether the explicit unit contract helps the agent.
+
+### Instead of
+
+Retrying repeatedly, treating the refusal as a Raman failure, changing the
+unit-contract skill, or changing credential transport.
+
+### Why
+
+The credential reached the provider boundary, but the provider refused before
+the agent could work. The verifier therefore ran against no result file, and
+the zero reward is not a meaningful benchmark observation.
+
+### Costs if wrong
+
+Counting this as an ablation failure would understate the agent's task
+performance and conflate account state with the experimental instruction.
+Repeated retries would add no evidence while the provider balance remains
+insufficient.
+
+### Verification
+
+The metadata-only receipt records `benchmark_status = not-run`,
+`observed_cost_usd = 0.0`, and an agent-execution refusal. The local trial
+record contains the provider's insufficient-credit response; that response
+and all raw logs remain local-only.
+
+### Next controlled step
+
+After the Anthropic account has usable credit, rerun the exact committed
+ablation once. Do not alter the config or skill between attempts, so the next
+result remains comparable to the recorded experiment definition.
+
 ## 2026-11-09 — Close the Harbor-to-shim credential gap
 
 ### Finding
