@@ -27,6 +27,8 @@ pass rate.
 - Evaluation target: a matched 10-task public Terminal-Bench 2.0 cohort.
 - Public study contract: [evaluation-manifest.toml](docs/evaluation-manifest.toml)
   and [metrics.md](docs/metrics.md).
+- Public findings summary:
+  [study-summary.md](docs/study-summary.md).
 - Decision and pivot history:
   [study-log.md](docs/study-log.md).
 - Matched-run procedure:

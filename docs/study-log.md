@@ -784,3 +784,39 @@ Review, stage, commit, and publish the transport fix, tests, documentation,
 and the two public-safe diagnostic reports. After that, run the optional fresh
 mini-swe-agent ten-task cohort only if the additional provider cost is worth
 measuring post-fix execution reliability.
+
+## 2026-11-10 — Freeze and publish the public study summary
+
+### Decision
+
+Freeze the paid-run evidence and publish a metadata-only summary covering the
+matched Codex and mini-swe-agent cohorts, the Raman unit-contract diagnostic,
+the post-hardening execution diagnostic, and the assurance finding.
+
+### Instead of
+
+Starting another full provider-funded cohort before publication, combining
+Claude's partial or diagnostic runs with the matched denominator, or presenting
+the Raman ablation as leaderboard evidence.
+
+### Why
+
+The existing evidence is sufficient to explain execution reliability,
+benchmark correctness, and evidence completeness as separate dimensions. The
+Raman ablation answered its causal question at one-task scope, while the
+remaining Claude evidence is not a clean comparable ten-task report.
+Publishing now preserves the exact denominators and prevents later runs from
+silently changing the public claim.
+
+### Verification
+
+The summary links the public per-run reports and states the non-claims. The
+standard-library suite passes all 56 tests, all public JSON files parse, and
+the Raman runbook points to the valid `v3` receipt rather than the provider-
+refused `v1` attempt.
+
+### Next step
+
+Review the publication branch, then merge it before drafting the external
+leaderboard or LinkedIn comment. Keep that comment draft-only until Julie
+chooses the final wording.
