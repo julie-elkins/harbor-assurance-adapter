@@ -67,7 +67,7 @@ one task, any timeout, or the output cap:
 
 ```text
 cd /Users/julielk/projects/harbor-assurance-adapter
-uv run harbor-assurance run --config config/mini-swe-agent-raman-unit-contract-ablation-2.0.toml --receipt runs/mini-swe-agent-raman-unit-contract-ablation-v1.receipt.json
+uv run harbor-assurance run --config config/mini-swe-agent-raman-unit-contract-ablation-2.0.toml --receipt runs/mini-swe-agent-raman-unit-contract-ablation-v3.receipt.json
 ```
 
 The instruction is versioned at
