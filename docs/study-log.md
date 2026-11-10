@@ -100,6 +100,66 @@ mini-swe-agent/Finch/Harbor recovery. Keep the four-task recovery separate
 from the interrupted ten-task diagnostic and do not splice its 3/4 score into
 the ten-task denominator.
 
+## 2026-11-10 — Investigate the `raman-fitting` failure
+
+### Finding
+
+The `raman-fitting` attempt was a clean execution but a benchmark failure:
+the agent created the required result file, while the verifier rejected both
+peak parameter sets. This is a task-correctness result—whether the completed
+output satisfies the task's semantic requirements—not an execution-reliability
+or credential-transport failure.
+
+The local diagnostic record shows that the agent considered applying an
+instrument-axis calibration, then submitted the fit in the data's native
+axis. The pinned task verifier and reference solution instead assume a
+calibrated Raman-shift axis. The task instruction does not state that unit
+conversion or axis contract explicitly, so the benchmark task is
+under-specified even though the verifier's outcome is unambiguous.
+
+### Decision
+
+Keep the observed result as one benchmark failure in the bounded recovery
+cohort, and classify its cause as task-correctness with task-contract
+ambiguity. Do not change the verifier, relabel the failure as infrastructure,
+or use a calibration hint to create a matched leaderboard score.
+
+### Instead of
+
+Retrying the provider, changing credential transport, editing the benchmark
+verifier, or rerunning the task with an extra instruction and presenting that
+diagnostic result as if it were the original benchmark condition.
+
+### Why
+
+The runner completed the task, the result file existed, and the verifier ran
+to a normal assertion failure. That establishes that the infrastructure path
+worked. The task's missing unit contract explains why an agent can identify a
+plausible calibration path yet still choose an interpretation that the
+verifier rejects.
+
+### Costs if wrong
+
+Calling this an infrastructure failure would hide a real output-quality issue.
+Calling it only an agent failure would hide a benchmark-design issue. Changing
+the task or mixing calibration-guided reruns into the public score would
+invalidate the comparison by changing the evaluated condition.
+
+### Verification
+
+The classification is supported by the completed trial metadata, the
+verifier's normal two-assertion failure, the pinned task fixture, and the
+corresponding reference path. Raw task data, prompts, provider responses, and
+trajectories remain local-only.
+
+### Next controlled step
+
+If we want to measure recoverability, run a separately labelled one-task
+diagnostic ablation with the unit contract made explicit. Report it as an
+interpretation-sensitivity check, not as a leaderboard or matched-cohort
+result. Do not spend that additional provider budget unless the diagnostic
+question is worth answering.
+
 ## 2026-11-09 — Close the Harbor-to-shim credential gap
 
 ### Finding
