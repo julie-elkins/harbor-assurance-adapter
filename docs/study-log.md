@@ -37,6 +37,69 @@ arguments and that the temporary file is removed after the process exits.
 The live Claude Code and mini-swe-agent credential-transport smoke tests
 completed successfully after the change.
 
+## 2026-11-10 — Isolate the completed-cohort credential recovery
+
+### Finding
+
+The interrupted mini-swe-agent cohort reached a terminal result with four
+credential-preflight `ValueError` records. Harbor's standalone `job resume`
+path did not provide a reliable recovery boundary: it bypassed the adapter's
+credential allow-list, and filtering a completed job removed trial directories
+without producing replacement executions.
+
+### Decision
+
+Create a separate four-task recovery profile and run it through
+`uv run harbor-assurance run`. The profile covers only
+`raman-fitting`, `fix-code-vulnerability`, `regex-log`, and
+`sanitize-git-repo`, with one attempt per task, a $40 estimate, and a $60
+declared ceiling.
+
+### Instead of
+
+Rerunning all ten tasks, mutating the original terminal job, or treating the
+four preflight failures as benchmark failures.
+
+### Why
+
+The adapter entry point explicitly passes only the named provider credential
+into the bounded Harbor child process and retains the argv-safe Harbor
+environment hook. A new job identity keeps recovery evidence separate from
+the interrupted diagnostic denominator and limits additional paid work to the
+invalid attempts.
+
+### Costs if wrong
+
+The recovery run can establish whether the four tasks were blocked only by
+credential transport; it cannot repair the original cohort's timeouts or
+retroactively make that cohort matched. Publishing the recovery as a second
+ten-task result would overstate the evidence.
+
+### Verification
+
+Validate the new configuration with the standard test suite and a dry run
+before starting the paid recovery. Generate a separate metadata-only report
+after completion.
+
+### Result
+
+The recovery completed with 4/4 clean executions, 4/4 benchmark observations,
+3/4 benchmark passes, a 1.0 execution completion rate, a 1.0 benchmark
+observation rate, and observed cost of `3.444659` USD. ATIF (Agent Trajectory
+Interchange Format, the structured execution trace) metadata passed for the
+run. The only benchmark failure was `raman-fitting`, classified as
+task-correctness rather than credential or infrastructure failure.
+
+The public-safe report is
+`docs/results/mini-swe-agent-credential-recovery-4-v1.json`.
+
+### Decision
+
+Treat the repaired credential path as execution-verified for this bounded
+mini-swe-agent/Finch/Harbor recovery. Keep the four-task recovery separate
+from the interrupted ten-task diagnostic and do not splice its 3/4 score into
+the ten-task denominator.
+
 ## 2026-11-09 — Close the Harbor-to-shim credential gap
 
 ### Finding

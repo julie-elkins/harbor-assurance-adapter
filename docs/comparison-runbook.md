@@ -36,3 +36,21 @@ The Codex reference report is the post-repair `v3` cohort. It records 10/10
 clean executions, 10/10 benchmark observations, 7/10 benchmark passes, and
 $10.098631 in observed Harbor cost. The earlier `v2` run remains historical
 pre-repair evidence and must not be combined with `v3`.
+
+## Credential-preflight recovery
+
+The interrupted mini-swe-agent cohort produced four credential-preflight
+failures after the Finch VM was recovered. These are not benchmark failures.
+Use the separate four-task recovery profile so the adapter's bounded child
+environment explicitly passes `ANTHROPIC_API_KEY` and the original diagnostic
+job remains unchanged:
+
+```text
+cd /Users/julielk/projects/harbor-assurance-adapter
+uv run harbor-assurance run --config config/mini-swe-agent-credential-recovery-4-2.0.toml --receipt runs/mini-swe-agent-credential-recovery-4-v1.receipt.json
+```
+
+The recovery profile covers only `raman-fitting`, `fix-code-vulnerability`,
+`regex-log`, and `sanitize-git-repo`, with one attempt per task and a declared
+$60 ceiling. Its results must be reported separately from the interrupted
+ten-task diagnostic and must not be spliced into that job's denominator.
