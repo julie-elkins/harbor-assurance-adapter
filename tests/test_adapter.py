@@ -133,6 +133,7 @@ class AdapterTests(unittest.TestCase):
             "codex-comparison-10-2.0.toml",
             "claude-code-comparison-10-2.0.toml",
             "mini-swe-agent-comparison-10-2.0.toml",
+            "mini-swe-agent-credential-recovery-4-2.0.toml",
         ):
             run_config = load_config(repository / "config" / name)
             command = list(run_config.command)
@@ -246,6 +247,36 @@ argv = ["harbor", "run", "--env", "docker"]
         self.assertIn("--include-task-name", run_config.command)
         index = run_config.command.index("--include-task-name")
         self.assertEqual(run_config.command[index + 1], "fix-git")
+
+    def test_mini_swe_credential_recovery_config_is_bounded(self) -> None:
+        repository = Path(__file__).parents[1]
+        run_config = load_config(
+            repository / "config" / "mini-swe-agent-credential-recovery-4-2.0.toml"
+        )
+
+        self.assertEqual(run_config.agent, "mini-swe-agent")
+        self.assertEqual(run_config.provider, "anthropic")
+        self.assertEqual(run_config.budget.task_count, 4)
+        self.assertEqual(run_config.budget.attempts, 1)
+        self.assertEqual(run_config.budget.max_total_cost_usd, 60.0)
+        self.assertEqual(
+            run_config.budget.stop_condition,
+            "stop-after-four-tasks-or-any-timeout-or-output-cap",
+        )
+        task_names = [
+            run_config.command[index + 1]
+            for index, value in enumerate(run_config.command)
+            if value == "--include-task-name"
+        ]
+        self.assertEqual(
+            task_names,
+            [
+                "raman-fitting",
+                "fix-code-vulnerability",
+                "regex-log",
+                "sanitize-git-repo",
+            ],
+        )
 
     def test_budget_rejects_estimate_above_ceiling(self) -> None:
         budget = Budget(

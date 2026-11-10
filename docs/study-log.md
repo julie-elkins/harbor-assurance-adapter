@@ -37,6 +37,129 @@ arguments and that the temporary file is removed after the process exits.
 The live Claude Code and mini-swe-agent credential-transport smoke tests
 completed successfully after the change.
 
+## 2026-11-10 — Isolate the completed-cohort credential recovery
+
+### Finding
+
+The interrupted mini-swe-agent cohort reached a terminal result with four
+credential-preflight `ValueError` records. Harbor's standalone `job resume`
+path did not provide a reliable recovery boundary: it bypassed the adapter's
+credential allow-list, and filtering a completed job removed trial directories
+without producing replacement executions.
+
+### Decision
+
+Create a separate four-task recovery profile and run it through
+`uv run harbor-assurance run`. The profile covers only
+`raman-fitting`, `fix-code-vulnerability`, `regex-log`, and
+`sanitize-git-repo`, with one attempt per task, a $40 estimate, and a $60
+declared ceiling.
+
+### Instead of
+
+Rerunning all ten tasks, mutating the original terminal job, or treating the
+four preflight failures as benchmark failures.
+
+### Why
+
+The adapter entry point explicitly passes only the named provider credential
+into the bounded Harbor child process and retains the argv-safe Harbor
+environment hook. A new job identity keeps recovery evidence separate from
+the interrupted diagnostic denominator and limits additional paid work to the
+invalid attempts.
+
+### Costs if wrong
+
+The recovery run can establish whether the four tasks were blocked only by
+credential transport; it cannot repair the original cohort's timeouts or
+retroactively make that cohort matched. Publishing the recovery as a second
+ten-task result would overstate the evidence.
+
+### Verification
+
+Validate the new configuration with the standard test suite and a dry run
+before starting the paid recovery. Generate a separate metadata-only report
+after completion.
+
+### Result
+
+The recovery completed with 4/4 clean executions, 4/4 benchmark observations,
+3/4 benchmark passes, a 1.0 execution completion rate, a 1.0 benchmark
+observation rate, and observed cost of `3.444659` USD. ATIF (Agent Trajectory
+Interchange Format, the structured execution trace) metadata passed for the
+run. The only benchmark failure was `raman-fitting`, classified as
+task-correctness rather than credential or infrastructure failure.
+
+The public-safe report is
+`docs/results/mini-swe-agent-credential-recovery-4-v1.json`.
+
+### Decision
+
+Treat the repaired credential path as execution-verified for this bounded
+mini-swe-agent/Finch/Harbor recovery. Keep the four-task recovery separate
+from the interrupted ten-task diagnostic and do not splice its 3/4 score into
+the ten-task denominator.
+
+## 2026-11-10 — Investigate the `raman-fitting` failure
+
+### Finding
+
+The `raman-fitting` attempt was a clean execution but a benchmark failure:
+the agent created the required result file, while the verifier rejected both
+peak parameter sets. This is a task-correctness result—whether the completed
+output satisfies the task's semantic requirements—not an execution-reliability
+or credential-transport failure.
+
+The local diagnostic record shows that the agent considered applying an
+instrument-axis calibration, then submitted the fit in the data's native
+axis. The pinned task verifier and reference solution instead assume a
+calibrated Raman-shift axis. The task instruction does not state that unit
+conversion or axis contract explicitly, so the benchmark task is
+under-specified even though the verifier's outcome is unambiguous.
+
+### Decision
+
+Keep the observed result as one benchmark failure in the bounded recovery
+cohort, and classify its cause as task-correctness with task-contract
+ambiguity. Do not change the verifier, relabel the failure as infrastructure,
+or use a calibration hint to create a matched leaderboard score.
+
+### Instead of
+
+Retrying the provider, changing credential transport, editing the benchmark
+verifier, or rerunning the task with an extra instruction and presenting that
+diagnostic result as if it were the original benchmark condition.
+
+### Why
+
+The runner completed the task, the result file existed, and the verifier ran
+to a normal assertion failure. That establishes that the infrastructure path
+worked. The task's missing unit contract explains why an agent can identify a
+plausible calibration path yet still choose an interpretation that the
+verifier rejects.
+
+### Costs if wrong
+
+Calling this an infrastructure failure would hide a real output-quality issue.
+Calling it only an agent failure would hide a benchmark-design issue. Changing
+the task or mixing calibration-guided reruns into the public score would
+invalidate the comparison by changing the evaluated condition.
+
+### Verification
+
+The classification is supported by the completed trial metadata, the
+verifier's normal two-assertion failure, the pinned task fixture, and the
+corresponding reference path. Raw task data, prompts, provider responses, and
+trajectories remain local-only.
+
+### Next controlled step
+
+If we want to measure recoverability, run a separately labelled one-task
+diagnostic ablation with the unit contract made explicit. Report it as an
+interpretation-sensitivity check, not as a leaderboard or matched-cohort
+result. Do not spend that additional provider budget unless the diagnostic
+question is worth answering.
+
 ## 2026-11-09 — Close the Harbor-to-shim credential gap
 
 ### Finding
