@@ -206,6 +206,48 @@ After the Anthropic account has usable credit, rerun the exact committed
 ablation once. Do not alter the config or skill between attempts, so the next
 result remains comparable to the recorded experiment definition.
 
+## 2026-11-10 — Correct the Raman ablation instruction boundary
+
+### Finding
+
+The first funded ablation completed cleanly but did not receive its treatment:
+Harbor recorded the injected skill in job metadata, while the mini-swe-agent
+adapter did not register `skills_dir` or append the skill text to the task
+instruction. The trajectory therefore contained the original task only, and
+the agent again submitted native-axis values.
+
+### Decision
+
+Replace the ineffective skill injection with Harbor's
+`--extra-instruction-path`, which appends a versioned diagnostic instruction
+directly to the task prompt. Treat the funded `v2` attempt as an invalid
+ablation and exclude it from interpretation-sensitivity analysis.
+
+### Instead of
+
+Calling `v2` evidence that the unit contract did not help, changing the
+benchmark verifier, or repeating the same ineffective skill configuration.
+
+### Why
+
+The experiment must verify that the treatment reached the agent before
+interpreting its outcome. The job lock proves the skill was selected, but the
+captured mini-swe-agent task prompt contains no unit-contract text. The
+extra-instruction path is the smallest supported boundary that directly
+changes the instruction mini-swe-agent receives.
+
+### Costs if wrong
+
+Counting `v2` as a failed ablation would produce a false causal conclusion.
+Using the skill path again would spend another provider call without testing
+the intended intervention.
+
+### Verification
+
+The corrected configuration is tested for the extra-instruction path and the
+instruction text. The next run must be checked for the appended text in the
+local task/trajectory evidence before its benchmark outcome is interpreted.
+
 ## 2026-11-09 — Close the Harbor-to-shim credential gap
 
 ### Finding

@@ -58,9 +58,9 @@ ten-task diagnostic and must not be spliced into that job's denominator.
 ## Raman unit-contract diagnostic
 
 This is a one-task interpretation-sensitivity check: it makes the coordinate
-conversion explicit through a versioned Harbor skill, then compares the result
-with the original `raman-fitting` failure. It is not a benchmark repair and
-must not be counted as a leaderboard or matched-cohort result.
+conversion explicit through a versioned extra instruction, then compares the
+result with the original `raman-fitting` failure. It is not a benchmark repair
+and must not be counted as a leaderboard or matched-cohort result.
 
 The profile has one attempt, a declared $15 ceiling, and a stop condition of
 one task, any timeout, or the output cap:
@@ -71,5 +71,6 @@ uv run harbor-assurance run --config config/mini-swe-agent-raman-unit-contract-a
 ```
 
 The instruction is versioned at
-`diagnostics/raman-unit-contract/SKILL.md`. Keep its receipt and any
-task-level files local; publish only the metadata-only summary after the run.
+`diagnostics/raman-unit-contract/extra-instruction.md`. Keep its receipt and
+any task-level files local; publish only the metadata-only summary after the
+run.

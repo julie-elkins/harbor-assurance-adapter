@@ -295,16 +295,21 @@ argv = ["harbor", "run", "--env", "docker"]
             run_config.budget.stop_condition,
             "stop-after-one-task-or-any-timeout-or-output-cap",
         )
-        self.assertIn("--skill", run_config.command)
-        skill_index = run_config.command.index("--skill")
+        self.assertIn("--extra-instruction-path", run_config.command)
+        skill_index = run_config.command.index("--extra-instruction-path")
         self.assertEqual(
             run_config.command[skill_index + 1],
-            "diagnostics/raman-unit-contract",
+            "diagnostics/raman-unit-contract/extra-instruction.md",
         )
-        skill = repository / "diagnostics" / "raman-unit-contract" / "SKILL.md"
-        skill_text = skill.read_text(encoding="utf-8")
-        self.assertIn("x_calibrated = 1e7 / wavelength_nm", skill_text)
-        self.assertIn("controlled diagnostic ablation", skill_text)
+        instruction = (
+            repository
+            / "diagnostics"
+            / "raman-unit-contract"
+            / "extra-instruction.md"
+        )
+        instruction_text = instruction.read_text(encoding="utf-8")
+        self.assertIn("x_calibrated = 1e7 / wavelength_nm", instruction_text)
+        self.assertIn("diagnostic instruction", instruction_text)
 
     def test_budget_rejects_estimate_above_ceiling(self) -> None:
         budget = Budget(
