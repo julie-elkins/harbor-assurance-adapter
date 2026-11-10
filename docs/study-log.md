@@ -152,6 +152,58 @@ verifier's normal two-assertion failure, the pinned task fixture, and the
 corresponding reference path. Raw task data, prompts, provider responses, and
 trajectories remain local-only.
 
+## 2026-11-10 — Validate the Raman unit-contract ablation
+
+### Result
+
+After replacing the ineffective skill injection with a direct extra
+instruction, the one-task ablation completed cleanly and passed all three
+verifier tests. The instruction appeared in the captured task prompt, and the
+agent converted the coordinate system before fitting.
+
+The metadata-only result was:
+
+- 1/1 clean execution
+- 1/1 benchmark observation
+- 1/1 benchmark pass
+- ATIF (Agent Trajectory Interchange Format, the structured execution trace)
+  metadata passed
+- observed cost of `0.198360` USD
+
+### Decision
+
+Treat this as evidence that the missing unit contract was causally relevant to
+the original Raman failure: once the conversion was explicitly delivered, the
+same agent and pinned task passed. Keep it labelled as a diagnostic ablation,
+not as a leaderboard or matched-cohort score.
+
+### Instead of
+
+Editing the Terminal-Bench task or verifier, replacing the original failed
+observation, or adding the ablation pass to the ten-task comparison.
+
+### Why
+
+The benchmark revision, task, model, runner, and credential transport stayed
+constant. The controlled change was the instruction boundary, and the local
+evidence confirms that the added instruction reached the agent before the
+successful fit.
+
+### Costs if wrong
+
+The ablation changes the agent's prompt, so treating its 1/1 result as a
+matched leaderboard result would overstate the original condition. The result
+supports a causal explanation for this task; it does not establish that every
+under-specified benchmark task will respond the same way.
+
+### Verification
+
+The public-safe report is
+`docs/results/mini-swe-agent-raman-unit-contract-ablation-v3.json`. The
+receipt records one completed trial, one benchmark pass, ATIF metadata
+success, and observed cost of `0.198360` USD. Raw task data, prompts,
+provider responses, and trajectories remain local-only.
+
 ### Next controlled step
 
 If we want to measure recoverability, run a separately labelled one-task
@@ -159,6 +211,94 @@ diagnostic ablation with the unit contract made explicit. Report it as an
 interpretation-sensitivity check, not as a leaderboard or matched-cohort
 result. Do not spend that additional provider budget unless the diagnostic
 question is worth answering.
+
+## 2026-11-10 — Provider-credit refusal of the Raman ablation
+
+### Finding
+
+The unit-contract ablation did not reach model execution. Anthropic rejected
+the request because the account balance was too low. The adapter recorded a
+provider-backed agent exit, no benchmark result, no output file, and
+`0.0` observed provider cost.
+
+### Decision
+
+Exclude this attempt from both task-correctness and interpretation-sensitivity
+analysis. It is provider-quota evidence only; it does not confirm or
+disconfirm whether the explicit unit contract helps the agent.
+
+### Instead of
+
+Retrying repeatedly, treating the refusal as a Raman failure, changing the
+unit-contract skill, or changing credential transport.
+
+### Why
+
+The credential reached the provider boundary, but the provider refused before
+the agent could work. The verifier therefore ran against no result file, and
+the zero reward is not a meaningful benchmark observation.
+
+### Costs if wrong
+
+Counting this as an ablation failure would understate the agent's task
+performance and conflate account state with the experimental instruction.
+Repeated retries would add no evidence while the provider balance remains
+insufficient.
+
+### Verification
+
+The metadata-only receipt records `benchmark_status = not-run`,
+`observed_cost_usd = 0.0`, and an agent-execution refusal. The local trial
+record contains the provider's insufficient-credit response; that response
+and all raw logs remain local-only.
+
+### Next controlled step
+
+After the Anthropic account has usable credit, rerun the exact committed
+ablation once. Do not alter the config or skill between attempts, so the next
+result remains comparable to the recorded experiment definition.
+
+## 2026-11-10 — Correct the Raman ablation instruction boundary
+
+### Finding
+
+The first funded ablation completed cleanly but did not receive its treatment:
+Harbor recorded the injected skill in job metadata, while the mini-swe-agent
+adapter did not register `skills_dir` or append the skill text to the task
+instruction. The trajectory therefore contained the original task only, and
+the agent again submitted native-axis values.
+
+### Decision
+
+Replace the ineffective skill injection with Harbor's
+`--extra-instruction-path`, which appends a versioned diagnostic instruction
+directly to the task prompt. Treat the funded `v2` attempt as an invalid
+ablation and exclude it from interpretation-sensitivity analysis.
+
+### Instead of
+
+Calling `v2` evidence that the unit contract did not help, changing the
+benchmark verifier, or repeating the same ineffective skill configuration.
+
+### Why
+
+The experiment must verify that the treatment reached the agent before
+interpreting its outcome. The job lock proves the skill was selected, but the
+captured mini-swe-agent task prompt contains no unit-contract text. The
+extra-instruction path is the smallest supported boundary that directly
+changes the instruction mini-swe-agent receives.
+
+### Costs if wrong
+
+Counting `v2` as a failed ablation would produce a false causal conclusion.
+Using the skill path again would spend another provider call without testing
+the intended intervention.
+
+### Verification
+
+The corrected configuration is tested for the extra-instruction path and the
+instruction text. The next run must be checked for the appended text in the
+local task/trajectory evidence before its benchmark outcome is interpreted.
 
 ## 2026-11-09 — Close the Harbor-to-shim credential gap
 
