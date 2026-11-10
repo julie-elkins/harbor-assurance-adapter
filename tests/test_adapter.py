@@ -278,6 +278,34 @@ argv = ["harbor", "run", "--env", "docker"]
             ],
         )
 
+    def test_raman_unit_contract_ablation_is_bounded_and_explicit(self) -> None:
+        repository = Path(__file__).parents[1]
+        run_config = load_config(
+            repository
+            / "config"
+            / "mini-swe-agent-raman-unit-contract-ablation-2.0.toml"
+        )
+
+        self.assertEqual(run_config.agent, "mini-swe-agent")
+        self.assertEqual(run_config.model, "anthropic/claude-opus-4-6")
+        self.assertEqual(run_config.budget.task_count, 1)
+        self.assertEqual(run_config.budget.attempts, 1)
+        self.assertEqual(run_config.budget.max_total_cost_usd, 15.0)
+        self.assertEqual(
+            run_config.budget.stop_condition,
+            "stop-after-one-task-or-any-timeout-or-output-cap",
+        )
+        self.assertIn("--skill", run_config.command)
+        skill_index = run_config.command.index("--skill")
+        self.assertEqual(
+            run_config.command[skill_index + 1],
+            "diagnostics/raman-unit-contract",
+        )
+        skill = repository / "diagnostics" / "raman-unit-contract" / "SKILL.md"
+        skill_text = skill.read_text(encoding="utf-8")
+        self.assertIn("x_calibrated = 1e7 / wavelength_nm", skill_text)
+        self.assertIn("controlled diagnostic ablation", skill_text)
+
     def test_budget_rejects_estimate_above_ceiling(self) -> None:
         budget = Budget(
             max_total_cost_usd=1.0,

@@ -54,3 +54,22 @@ The recovery profile covers only `raman-fitting`, `fix-code-vulnerability`,
 `regex-log`, and `sanitize-git-repo`, with one attempt per task and a declared
 $60 ceiling. Its results must be reported separately from the interrupted
 ten-task diagnostic and must not be spliced into that job's denominator.
+
+## Raman unit-contract diagnostic
+
+This is a one-task interpretation-sensitivity check: it makes the coordinate
+conversion explicit through a versioned Harbor skill, then compares the result
+with the original `raman-fitting` failure. It is not a benchmark repair and
+must not be counted as a leaderboard or matched-cohort result.
+
+The profile has one attempt, a declared $15 ceiling, and a stop condition of
+one task, any timeout, or the output cap:
+
+```text
+cd /Users/julielk/projects/harbor-assurance-adapter
+uv run harbor-assurance run --config config/mini-swe-agent-raman-unit-contract-ablation-2.0.toml --receipt runs/mini-swe-agent-raman-unit-contract-ablation-v1.receipt.json
+```
+
+The instruction is versioned at
+`diagnostics/raman-unit-contract/SKILL.md`. Keep its receipt and any
+task-level files local; publish only the metadata-only summary after the run.
