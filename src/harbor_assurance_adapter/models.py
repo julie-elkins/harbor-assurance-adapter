@@ -217,6 +217,7 @@ class RunReceipt:
     agent_last_status: str | None = None
     agent_terminal_event_type: str | None = None
     runner_successful_trials: int | None = None
+    atif_schema_version: str | None = None
 
     def validate(self) -> None:
         identifier(self.schema_version, "schema_version")
@@ -279,6 +280,8 @@ class RunReceipt:
             value = getattr(self, field_name)
             if value is not None:
                 identifier(value, field_name)
+        if self.atif_schema_version is not None:
+            identifier(self.atif_schema_version, "atif_schema_version")
         if self.failure_breakdown is not None:
             if not self.failure_breakdown:
                 raise ValueError("failure_breakdown must not be empty.")

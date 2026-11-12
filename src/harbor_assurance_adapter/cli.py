@@ -12,10 +12,11 @@ from pathlib import Path
 from .aah import main as aah_main
 from .agent_trace import AgentTraceSummary, latest_agent_trace
 from .atif import AtifScanResult, latest_trajectory, scan_trajectory
+from .evidence_summary import receipt_to_evidence_summary
 from .job_evaluation import summarize_harbor_job
 from .models import load_config
 from .process import ProcessResult, missing_environment, run_bounded
-from .receipt import make_receipt, write_receipt
+from .receipt import make_receipt, read_receipt, write_receipt
 from .runner_result import RunnerResult, latest_result
 
 
@@ -157,6 +158,7 @@ def _run(args: argparse.Namespace) -> int:
         trajectory_digest=atif_scan.trajectory_digest,
         atif_step_count=atif_scan.step_count,
         atif_tool_call_count=atif_scan.tool_call_count,
+        atif_schema_version=atif_scan.schema_version,
         agent_trace=agent_trace,
         assurance_source=assurance_source,
     )
@@ -176,6 +178,31 @@ def _run(args: argparse.Namespace) -> int:
 
 def _summarize_job(args: argparse.Namespace) -> int:
     summary = summarize_harbor_job(args.job, receipt_path=args.receipt)
+    serialized = json.dumps(summary, indent=2, sort_keys=True) + "\n"
+    if args.output is None:
+        print(serialized, end="")
+        return 0
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(serialized, encoding="utf-8")
+    print(json.dumps({"status": "written", "output": str(args.output)}))
+    return 0
+
+
+def _evidence_summary(args: argparse.Namespace) -> int:
+    try:
+        receipt = read_receipt(args.receipt)
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        print(
+            json.dumps(
+                {
+                    "status": "refused",
+                    "refusal_code": "receipt_invalid",
+                    "guidance": "provide a valid metadata-only Harbor receipt",
+                }
+            )
+        )
+        return 1
+    summary = receipt_to_evidence_summary(receipt)
     serialized = json.dumps(summary, indent=2, sort_keys=True) + "\n"
     if args.output is None:
         print(serialized, end="")
@@ -210,6 +237,14 @@ def main(argv: list[str] | None = None) -> int:
     summary_parser.add_argument("--receipt", type=Path)
     summary_parser.add_argument("--output", type=Path)
     summary_parser.set_defaults(handler=_summarize_job)
+
+    evidence_parser = subparsers.add_parser(
+        "evidence-summary",
+        help="project a metadata-only Harbor receipt into the ATIF evidence contract",
+    )
+    evidence_parser.add_argument("--receipt", type=Path, required=True)
+    evidence_parser.add_argument("--output", type=Path)
+    evidence_parser.set_defaults(handler=_evidence_summary)
 
     aah_parser = subparsers.add_parser(
         "aah-adapter",

@@ -17,6 +17,22 @@ and observed cost separately. A conditional pass rate is the fraction of clean
 executions that passed verification; it is not a replacement for the overall
 pass rate.
 
+## How this fits the public evaluation path
+
+This repository is the bounded benchmark execution layer in the public
+[evaluation and assurance path](https://github.com/julie-elkins/agent-assurance-harness#public-portfolio-path).
+It answers, “What happened when the coding agent attempted the task?” The
+[Agent Assurance Harness](https://github.com/julie-elkins/agent-assurance-harness)
+then checks whether the run left sufficient metadata to support a bounded,
+observable, privacy-safe claim.
+
+The [Claude Evaluation Lab](https://github.com/julie-elkins/claude-evaluation-lab)
+teaches the evaluation concepts, while
+[LLM Eval Validity](https://github.com/julie-elkins/llm-eval-validity) studies
+whether the resulting measurement is reliable enough for the decision. Keeping
+these roles separate prevents a benchmark score from being mistaken for proof
+that the execution evidence, evaluator, or recovery path was trustworthy.
+
 ## Current scope
 
 - First runner: mini-swe-agent v2.4.6.
@@ -225,6 +241,29 @@ versions, step/tool-call counts, and digest; it does not inspect or export
 trajectory content. For the current Claude Code profile, a metadata-only scan
 of the local JSONL event log is used when ATIF is missing; the receipt names
 that source explicitly.
+
+To validate the receipt's evidence boundary against the public AAH conformance
+contract, first project the receipt without exposing the local trajectory:
+
+```bash
+uv run harbor-assurance evidence-summary \
+  --receipt runs/RECEIPT.json \
+  --output /tmp/harbor-atif-summary.json
+```
+
+Then run the harness's conformance tool from a local checkout of
+`agent-assurance-harness`:
+
+```bash
+HARNESS_ROOT=/path/to/agent-assurance-harness
+uv run python "$HARNESS_ROOT/tools/atif_conformance_report.py" \
+  --summary /tmp/harbor-atif-summary.json \
+  --fail-on-findings
+```
+
+This is an evidence-completeness check, not a benchmark score. A missing ATIF
+artifact, unknown schema version, or invalid digest remains blocked so a
+receipt cannot manufacture assurance by omitting the underlying evidence.
 
 ## Tests
 
