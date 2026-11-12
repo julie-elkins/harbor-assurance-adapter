@@ -31,6 +31,7 @@ class AtifTests(unittest.TestCase):
         self.assertEqual(result.assurance_status, "metadata-checked")
         self.assertEqual(result.step_count, 2)
         self.assertEqual(result.tool_call_count, 1)
+        self.assertEqual(result.schema_version, "ATIF-v1.2")
         self.assertIsNotNone(result.trajectory_digest)
         self.assertNotIn("hidden", repr(result))
 
@@ -56,6 +57,7 @@ class AtifTests(unittest.TestCase):
         self.assertEqual(result.assurance_status, "metadata-checked")
         self.assertEqual(result.step_count, 2)
         self.assertEqual(result.tool_call_count, 1)
+        self.assertEqual(result.schema_version, "ATIF-v1.5")
         self.assertNotIn("hidden", repr(result))
 
     def test_missing_atif_is_not_clean(self) -> None:

@@ -29,6 +29,7 @@ class AtifScanResult:
     trajectory_digest: str | None = None
     step_count: int | None = None
     tool_call_count: int | None = None
+    schema_version: str | None = None
 
 
 def _digest(raw: bytes) -> str:
@@ -82,6 +83,7 @@ def scan_trajectory(path: Path | None) -> AtifScanResult:
         trajectory_digest=digest,
         step_count=len(steps),
         tool_call_count=tool_call_count,
+        schema_version=data["schema_version"],
     )
 
 

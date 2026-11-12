@@ -10,6 +10,40 @@ environment completed the attempt. A **benchmark result** describes whether
 the completed task passed verification. These are separate questions and use
 separate denominators.
 
+## 2026-11-12 — Add the receipt-to-conformance bridge
+
+### Decision
+
+Project validated Harbor receipts into the Agent Assurance Harness's
+identifier-only ATIF evidence contract through a bounded
+`evidence-summary` command. Preserve the actual ATIF schema version in the
+receipt so the projection never infers a supported version.
+
+### Instead of
+
+Hard-coding `ATIF-v1.5`, exporting a raw trajectory, or making the Harbor
+adapter import the harness as a runtime dependency.
+
+### Why
+
+The harness checks evidence completeness at a separate repository boundary.
+The adapter already owns the local trajectory scan, digest, and bounded counts,
+so the smallest safe integration is a metadata-only projection of the
+validated receipt. Keeping the repositories separate also lets the harness
+validate the public contract without coupling its runtime to Harbor.
+
+### Costs if wrong
+
+An incorrect schema version could create a false conformance pass. Exporting
+raw evidence would violate the repository's public data boundary. Coupling
+the runtimes would make the assurance check harder to reproduce independently.
+
+### Verification
+
+The adapter test suite passed all 60 tests. The cross-repository smoke passed:
+a synthetic completed receipt was accepted by harness conformance, while a
+planned receipt without observed ATIF evidence was blocked.
+
 ## 2026-11-08 — Harden provider credential transport
 
 ### Finding

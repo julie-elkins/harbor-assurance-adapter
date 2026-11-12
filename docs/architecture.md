@@ -32,6 +32,8 @@ metadata-only receipt
     |
     +--> local ATIF structure scan (digest and bounded counts only)
     |
+    +--> identifier-only ATIF evidence summary for AAH conformance
+    |
     +--> Claude JSONL metadata scan when ATIF is absent
     |
     v
@@ -62,6 +64,14 @@ The public evaluation manifest defines the matched cohort and metric formulas.
 The receipt aggregator consumes only validated receipt fields. Pilot receipts
 and matched-cohort receipts must remain distinguishable; mechanically combining
 them would produce a number with an unclear denominator.
+
+The `evidence-summary` command projects a validated receipt into the
+Agent Assurance Harness's identifier-only ATIF contract. It carries the
+observed ATIF schema version, prefixes the SHA-256 digest in the format the
+harness accepts, and preserves missing or invalid evidence as blocked metadata.
+It never reads raw trajectories or provider output. The resulting conformance
+report answers whether the evidence boundary is complete; it does not answer
+whether the coding task was correct.
 
 The Finch compatibility shim also repairs a verifier transport failure observed
 in the public Terminal-Bench tasks: it routes the verifier's pinned `uv` 0.9.5
