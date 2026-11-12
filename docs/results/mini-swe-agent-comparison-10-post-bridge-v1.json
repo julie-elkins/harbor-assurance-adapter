@@ -1,0 +1,112 @@
+{
+  "assurance": {
+    "assurance_source": "atif",
+    "atif_scan_status": "passed",
+    "scope": "run-level",
+    "status": "metadata-checked"
+  },
+  "metrics": {
+    "attempted_tasks": 10,
+    "benchmark_failures": 1,
+    "benchmark_observation_rate": 1.0,
+    "benchmark_observations": 10,
+    "benchmark_pass_rate": 0.9,
+    "benchmark_passes": 9,
+    "clean_executions": 10,
+    "conditional_benchmark_pass_rate": 0.9,
+    "execution_completion_rate": 1.0,
+    "observed_cost_usd": 16.530741
+  },
+  "provenance": {
+    "agent": "mini-swe-agent",
+    "benchmark": "terminal-bench",
+    "benchmark_revision": "2.0",
+    "model": "anthropic/claude-opus-4-6",
+    "runner_revision": null,
+    "source": "terminal-bench",
+    "task_set_revision": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c"
+  },
+  "schema_version": "job-evaluation-v1",
+  "tasks": [
+    {
+      "benchmark_score": 1.0,
+      "benchmark_status": "passed",
+      "execution_status": "completed",
+      "failure_class": null,
+      "observed_cost_usd": 0.388267,
+      "task": "break-filter-js-from-html"
+    },
+    {
+      "benchmark_score": 1.0,
+      "benchmark_status": "passed",
+      "execution_status": "completed",
+      "failure_class": null,
+      "observed_cost_usd": 0.914596,
+      "task": "cobol-modernization"
+    },
+    {
+      "benchmark_score": 1.0,
+      "benchmark_status": "passed",
+      "execution_status": "completed",
+      "failure_class": null,
+      "observed_cost_usd": 0.31585,
+      "task": "fix-code-vulnerability"
+    },
+    {
+      "benchmark_score": 1.0,
+      "benchmark_status": "passed",
+      "execution_status": "completed",
+      "failure_class": null,
+      "observed_cost_usd": 0.212996,
+      "task": "fix-git"
+    },
+    {
+      "benchmark_score": 1.0,
+      "benchmark_status": "passed",
+      "execution_status": "completed",
+      "failure_class": null,
+      "observed_cost_usd": 10.178974,
+      "task": "gpt2-codegolf"
+    },
+    {
+      "benchmark_score": 1.0,
+      "benchmark_status": "passed",
+      "execution_status": "completed",
+      "failure_class": null,
+      "observed_cost_usd": 0.178699,
+      "task": "kv-store-grpc"
+    },
+    {
+      "benchmark_score": 1.0,
+      "benchmark_status": "passed",
+      "execution_status": "completed",
+      "failure_class": null,
+      "observed_cost_usd": 1.305478,
+      "task": "qemu-startup"
+    },
+    {
+      "benchmark_score": 0.0,
+      "benchmark_status": "failed",
+      "execution_status": "completed",
+      "failure_class": "task-correctness",
+      "observed_cost_usd": 1.192807,
+      "task": "raman-fitting"
+    },
+    {
+      "benchmark_score": 1.0,
+      "benchmark_status": "passed",
+      "execution_status": "completed",
+      "failure_class": null,
+      "observed_cost_usd": 0.384698,
+      "task": "regex-log"
+    },
+    {
+      "benchmark_score": 1.0,
+      "benchmark_status": "passed",
+      "execution_status": "completed",
+      "failure_class": null,
+      "observed_cost_usd": 1.458376,
+      "task": "sanitize-git-repo"
+    }
+  ]
+}
