@@ -34,6 +34,26 @@ setup and did not produce a trustworthy benchmark observation. It is therefore
 included in execution reliability and excluded from the conditional benchmark
 denominator. The overall attempted-task pass rate remains visible as 6/10.
 
+### Post-bridge mini-swe-agent follow-up
+
+After the credential transport and evidence-path changes merged, we ran the
+same ten-task revision again as a new follow-up cohort. It is not combined with
+the original denominator:
+
+| Runner | Attempted | Clean executions | Benchmark observations | Passes | Execution completion | Pass rate / attempted | Conditional pass rate | Observed cost |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| mini-swe-agent (`anthropic/claude-opus-4-6`) | 10 | 10 | 10 | 9 | 100% | 90% | 90% | $16.530741 |
+
+The follow-up improved the observed execution completion rate from 90% to
+100% and the attempted-task pass rate from 60% to 90%. This is a follow-up
+observation, not causal proof that the evidence bridge caused the improvement:
+the run also reflects a new provider execution and recovered environment
+conditions. The remaining `raman-fitting` failure was a clean
+task-correctness failure, not an execution failure.
+
+The public-safe report is
+[mini-swe-agent-comparison-10-post-bridge-v1.json](results/mini-swe-agent-comparison-10-post-bridge-v1.json).
+
 Claude Code was exercised during the study, but its provider-quota and evidence
 path interruptions prevented a fully comparable public ten-task result from
 being included here. Its runs remain documented in the

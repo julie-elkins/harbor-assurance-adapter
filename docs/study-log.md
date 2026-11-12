@@ -86,6 +86,47 @@ one completed trial, one successful trial, zero errored trials, and benchmark
 score `1.0`. The harness report accepted the summary with
 `schema_version = ATIF-v1.2` and `data_boundary = metadata_only`.
 
+## 2026-11-12 — Run the post-bridge mini-swe-agent follow-up cohort
+
+### Finding
+
+The same ten-task revision completed all ten executions with nine benchmark
+passes. The one failure was `raman-fitting`, and the public-safe job report
+classified it as `task-correctness`. Native ATIF evidence passed conformance
+with `ATIF-v1.2`.
+
+### Decision
+
+Publish this as a separate post-fix follow-up observation: 10/10 clean
+executions, 10/10 benchmark observations, 9/10 benchmark passes, and
+approximately `$16.530741` observed cost.
+
+### Instead of
+
+Replacing the original 9/10 execution and 6/10 pass result, combining the two
+cohorts into one denominator, or claiming that the evidence bridge itself
+caused the higher score.
+
+### Why
+
+The task-set revision and model match the historical mini-swe-agent cohort,
+which makes the follow-up useful for measuring changed observed reliability.
+It is still a new run with new provider and environment conditions, so the
+result supports a follow-up comparison but not a causal attribution.
+
+### Costs if wrong
+
+Overstating the improvement would turn a single follow-up into a universal
+model claim. Under-reporting it would hide the useful finding that the
+credential and evidence path now completed all ten executions.
+
+### Verification
+
+The public-safe report records 9/10 passes, 10/10 clean executions,
+`benchmark_observation_rate = 1.0`, `atif_scan_status = passed`, and
+`assurance_source = atif`. The harness conformance report accepted all five
+metadata checks.
+
 ## 2026-11-08 — Harden provider credential transport
 
 ### Finding
