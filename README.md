@@ -264,6 +264,9 @@ uv run python "$HARNESS_ROOT/tools/atif_conformance_report.py" \
 This is an evidence-completeness check, not a benchmark score. A missing ATIF
 artifact, unknown schema version, or invalid digest remains blocked so a
 receipt cannot manufacture assurance by omitting the underlying evidence.
+The checked-in synthetic contract fixture at
+`examples/evidence-summary/harbor-atif-v1.2.json` exercises the same public
+shape without a provider call.
 
 ## Tests
 
