@@ -12,6 +12,14 @@ from harbor_assurance_adapter.receipt import make_receipt, write_receipt
 from harbor_assurance_adapter.runner_result import RunnerResult
 
 
+FIXTURE_PATH = (
+    Path(__file__).parents[1]
+    / "examples"
+    / "evidence-summary"
+    / "harbor-atif-v1.2.json"
+)
+
+
 def _config(tmp: Path) -> RunConfig:
     return RunConfig(
         benchmark="terminal-bench",
@@ -40,7 +48,14 @@ def _config(tmp: Path) -> RunConfig:
     )
 
 
-def _receipt(tmp: Path, *, atif_status: str = "passed"):
+def _receipt(
+    tmp: Path,
+    *,
+    atif_status: str = "passed",
+    atif_schema_version: str = "ATIF-v1.5",
+    atif_step_count: int = 2,
+    atif_tool_call_count: int = 1,
+):
     return make_receipt(
         _config(tmp),
         ProcessResult(
@@ -55,9 +70,13 @@ def _receipt(tmp: Path, *, atif_status: str = "passed"):
         atif_scan_status=atif_status,
         assurance_status="metadata-checked",
         trajectory_digest="a" * 64 if atif_status == "passed" else None,
-        atif_step_count=2 if atif_status == "passed" else None,
-        atif_tool_call_count=1 if atif_status == "passed" else None,
-        atif_schema_version="ATIF-v1.5" if atif_status == "passed" else None,
+        atif_step_count=atif_step_count if atif_status == "passed" else None,
+        atif_tool_call_count=(
+            atif_tool_call_count if atif_status == "passed" else None
+        ),
+        atif_schema_version=(
+            atif_schema_version if atif_status == "passed" else None
+        ),
         runner_result=RunnerResult(
             status="completed",
             total_trials=1,
@@ -70,6 +89,20 @@ def _receipt(tmp: Path, *, atif_status: str = "passed"):
 
 
 class EvidenceSummaryTests(unittest.TestCase):
+    def test_checked_in_harbor_fixture_matches_projection_contract(self) -> None:
+        fixture = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as directory:
+            summary = receipt_to_evidence_summary(
+                _receipt(
+                    Path(directory),
+                    atif_schema_version="ATIF-v1.2",
+                    atif_step_count=63,
+                    atif_tool_call_count=61,
+                )
+            )
+
+        self.assertEqual(summary, fixture)
+
     def test_completed_atif_receipt_maps_to_harness_contract(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             summary = receipt_to_evidence_summary(_receipt(Path(directory)))

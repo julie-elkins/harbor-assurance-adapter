@@ -44,6 +44,48 @@ The adapter test suite passed all 60 tests. The cross-repository smoke passed:
 a synthetic completed receipt was accepted by harness conformance, while a
 planned receipt without observed ATIF evidence was blocked.
 
+## 2026-11-12 — Verify the merged receipt-to-conformance path
+
+### Finding
+
+The first real post-merge one-task smoke completed cleanly on the
+mini-swe-agent/Harbor/Finch path. The receipt recorded
+`atif_schema_version = ATIF-v1.2`, `atif_scan_status = passed`,
+63 ATIF steps, 61 tool calls, and a passing benchmark result. The projected
+summary passed all five Agent Assurance Harness conformance checks.
+
+### Decision
+
+Treat the receipt-to-conformance bridge as verified for this pinned smoke path,
+and add a synthetic checked-in contract fixture so future CI runs can detect
+adapter or harness contract drift without a provider call.
+
+### Instead of
+
+Rerunning the ten-task cohort immediately, treating this one-task smoke as
+matched benchmark evidence, or relying on a temporary local JSON file as the
+only regression check.
+
+### Why
+
+The smoke answers the plumbing question: the merged adapter writes the actual
+ATIF schema version and the harness accepts the metadata-only projection.
+It does not answer the larger question of post-fix agent reliability, so a
+new cohort would be a separate paid experiment.
+
+### Costs if wrong
+
+The smoke covers one task and one pinned runner path. The synthetic fixture
+guards the public schema shape but cannot prove provider availability,
+trajectory quality, or benchmark generality.
+
+### Verification
+
+The receipt completed in 713.054 seconds with observed cost `$1.00522975`,
+one completed trial, one successful trial, zero errored trials, and benchmark
+score `1.0`. The harness report accepted the summary with
+`schema_version = ATIF-v1.2` and `data_boundary = metadata_only`.
+
 ## 2026-11-08 — Harden provider credential transport
 
 ### Finding
