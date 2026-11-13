@@ -54,6 +54,26 @@ task-correctness failure, not an execution failure.
 The public-safe report is
 [mini-swe-agent-comparison-10-post-bridge-v1.json](results/mini-swe-agent-comparison-10-post-bridge-v1.json).
 
+### Replication attempt: non-clean diagnostic
+
+We then attempted one replication of the post-bridge cohort with the same ten
+tasks and configuration. The run reached terminal states for all ten tasks,
+but `qemu-startup` timed out during agent execution, so this is not a clean
+replication and is not added to a leaderboard denominator:
+
+| Runner | Attempted | Clean executions | Benchmark observations | Passes | Execution completion | Pass rate / attempted | Conditional pass rate | Observed cost |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| mini-swe-agent replication | 10 | 9 | 9 | 7 | 90% | 70% | 77.8% | $18.547999 |
+
+The two observed benchmark failures were `gpt2-codegolf` and
+`raman-fitting`, both clean task-correctness failures. `qemu-startup` is
+reported as an execution error with no benchmark observation. The result does
+not establish that the post-bridge 90% observation reproduced, and it does not
+prove that the bridge caused or failed to cause any change.
+
+The public-safe diagnostic report is
+[mini-swe-agent-replication-10-v1.json](results/mini-swe-agent-replication-10-v1.json).
+
 The checked-in
 [cohort comparison report](results/cohort-comparison-v1.json) is a no-cost,
 offline reproducibility check across the original mini-swe-agent cohort, Codex,

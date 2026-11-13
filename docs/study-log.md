@@ -1011,3 +1011,44 @@ report path.
 Run and inspect the bounded smoke. Do not start the ten-task replication until
 the smoke is a clean execution with valid metadata-only evidence and no
 credential, timeout, or output-cap refusal.
+
+## 2026-11-13 — Replication reached a non-clean diagnostic result
+
+### Decision
+
+Preserve the ten-task replication as diagnostic evidence only. Record 9/10
+clean executions, 9/10 benchmark observations, and 7/10 benchmark passes, but
+do not treat it as a clean replication or add it to the leaderboard-style
+denominator.
+
+### Instead of
+
+Rerunning the full ten-task cohort immediately, counting the timed-out
+`qemu-startup` task as a benchmark failure, or presenting 7/10 as a clean
+replication score.
+
+### Why
+
+The run completed nine tasks cleanly and produced metadata-checked ATIF
+evidence, but `qemu-startup` hit Harbor's 3600-second agent timeout. The two
+observed benchmark failures, `gpt2-codegolf` and `raman-fitting`, are separate
+task-correctness outcomes. The refusal is therefore execution-reliability
+evidence, not a valid matched accuracy result.
+
+The public summarizer also exposed and corrected a metric-boundary defect:
+errored tasks carrying a verifier reward of `0.0` must be `not-observed`, not
+benchmark failures. Otherwise benchmark observation rates can exceed their
+denominator and the public report becomes mathematically invalid.
+
+### Verification
+
+The corrected report records `benchmark_observations = 9`,
+`benchmark_failures = 2`, `execution_completion_rate = 0.9`, and observed cost
+`$18.547999`. The standard-library suite passes 67 tests, and the existing
+offline cohort comparison remains byte-for-byte deterministic.
+
+### Next step
+
+Investigate `qemu-startup` separately with one bounded diagnostic, using the
+existing isolated setup-smoke path and preserving this replication as a
+non-clean result.

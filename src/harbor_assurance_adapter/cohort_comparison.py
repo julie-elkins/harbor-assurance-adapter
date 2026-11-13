@@ -182,6 +182,11 @@ def _task_map(data: dict[str, Any], cohort_id: str) -> dict[str, dict[str, Any]]
             "not-observed",
         }:
             raise ValueError(f"{cohort_id} task {name} has unknown benchmark status.")
+        if execution_status != "completed" and benchmark_status != "not-observed":
+            raise ValueError(
+                f"{cohort_id} task {name} reports benchmark status for "
+                "a non-completed execution."
+            )
         score = _number(task.get("benchmark_score"), f"{cohort_id} task {name}.score")
         cost = _number(
             task.get("observed_cost_usd"),
@@ -205,8 +210,16 @@ def _computed_metrics(tasks: dict[str, dict[str, Any]]) -> dict[str, object]:
         and task["benchmark_status"] in _OBSERVED_BENCHMARK_STATUSES
         for task in tasks.values()
     )
-    passes = sum(task["benchmark_status"] == "passed" for task in tasks.values())
-    failures = sum(task["benchmark_status"] == "failed" for task in tasks.values())
+    passes = sum(
+        task["execution_status"] == "completed"
+        and task["benchmark_status"] == "passed"
+        for task in tasks.values()
+    )
+    failures = sum(
+        task["execution_status"] == "completed"
+        and task["benchmark_status"] == "failed"
+        for task in tasks.values()
+    )
     costs = [
         task["observed_cost_usd"]
         for task in tasks.values()
