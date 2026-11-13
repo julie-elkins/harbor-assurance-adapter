@@ -297,6 +297,15 @@ separate from the original denominator.
 uv run python -m unittest discover -s tests -v
 ```
 
+## Automated reproducibility gate
+
+Continuous integration (CI), meaning automated checks on proposed changes and
+updates to `main`, runs the locked test suite and regenerates the offline cohort
+comparison report. It does not receive provider credentials, start Harbor, or
+make paid model calls. The gate validates that the checked-in public cohort
+metadata remains internally consistent and deterministic; it does not establish
+benchmark quality, model capability, or agent safety.
+
 ## Safety boundary
 
 The adapter invokes the configured command with `shell=False`, a minimal child
