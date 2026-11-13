@@ -278,6 +278,28 @@ argv = ["harbor", "run", "--env", "docker"]
             ],
         )
 
+    def test_mini_swe_replication_smoke_config_is_bounded(self) -> None:
+        repository = Path(__file__).parents[1]
+        run_config = load_config(
+            repository / "config" / "mini-swe-agent-replication-smoke-2.0.toml"
+        )
+
+        self.assertEqual(run_config.agent, "mini-swe-agent")
+        self.assertEqual(run_config.provider, "anthropic")
+        self.assertEqual(run_config.budget.task_count, 1)
+        self.assertEqual(run_config.budget.attempts, 1)
+        self.assertEqual(run_config.budget.max_total_cost_usd, 25.0)
+        self.assertEqual(
+            run_config.budget.stop_condition,
+            "stop-after-one-task-or-any-timeout-or-output-cap",
+        )
+        task_names = [
+            run_config.command[index + 1]
+            for index, value in enumerate(run_config.command)
+            if value == "--include-task-name"
+        ]
+        self.assertEqual(task_names, ["fix-git"])
+
     def test_raman_unit_contract_ablation_is_bounded_and_explicit(self) -> None:
         repository = Path(__file__).parents[1]
         run_config = load_config(

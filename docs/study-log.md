@@ -975,3 +975,39 @@ post-bridge mini-swe-agent cohort. All 63 standard-library tests passed.
 Review the staged diff and publish the comparator, manifest, checked-in
 comparison report, tests, and documentation. Do not start another paid cohort
 until a distinct measurement question is defined.
+
+## 2026-11-13 — Define the post-bridge replication
+
+### Decision
+
+Run a separate mini-swe-agent replication only to test whether the post-bridge
+10/10 clean-execution and 9/10 benchmark-pass observation recurs under the same
+ten-task protocol. Keep the replication outside the historical and original
+post-bridge denominators until its public-safe report is reviewed.
+
+### Instead of
+
+Starting another provider comparison, changing the task set, adding more
+attempts per task, or treating a second run as causal proof that the bridge
+caused the earlier improvement.
+
+### Why
+
+The current evidence supports a reproducibility question, not another model
+ranking claim. A one-task `fix-git` smoke checks that the funded credential and
+Finch/Harbor path are available before the ten-task spend. The matched protocol
+then isolates run-to-run variation as far as one repeated cohort can.
+
+### Verification
+
+The smoke configuration is pinned to one public task, one attempt, the same
+runner/model, the argv-safe credential environment, a declared $25 preflight
+ceiling, and a stop condition for timeout or output cap. The ten-task run will
+reuse the existing comparison configuration and receive a separate receipt and
+report path.
+
+### Next step
+
+Run and inspect the bounded smoke. Do not start the ten-task replication until
+the smoke is a clean execution with valid metadata-only evidence and no
+credential, timeout, or output-cap refusal.
