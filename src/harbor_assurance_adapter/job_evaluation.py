@@ -1,4 +1,9 @@
-"""Public-safe summaries of multi-task Harbor job metadata."""
+"""Apply three rules to public-safe multi-task Harbor summaries.
+
+1. Keep task execution status separate from benchmark correctness.
+2. Count benchmark observations only for clean executions.
+3. Export metadata only; never export prompts, provider output, or trajectories.
+"""
 
 from __future__ import annotations
 
@@ -50,12 +55,6 @@ def _task_evaluation(path: Path) -> TaskEvaluation:
     agent_result = data.get("agent_result")
     exception_info = data.get("exception_info")
     verifier_result = data.get("verifier_result")
-    reward = None
-    if isinstance(verifier_result, dict):
-        rewards = verifier_result.get("rewards")
-        if isinstance(rewards, dict):
-            reward = _number(rewards.get("reward"))
-
     if isinstance(agent_result, dict) and exception_info is None and isinstance(
         verifier_result, dict
     ):
@@ -65,7 +64,13 @@ def _task_evaluation(path: Path) -> TaskEvaluation:
     else:
         execution_status = "incomplete"
 
-    if reward is None:
+    reward = None
+    if execution_status == "completed" and isinstance(verifier_result, dict):
+        rewards = verifier_result.get("rewards")
+        if isinstance(rewards, dict):
+            reward = _number(rewards.get("reward"))
+
+    if execution_status != "completed" or reward is None:
         benchmark_status = "not-observed"
     elif reward == 1.0:
         benchmark_status = "passed"
@@ -158,10 +163,15 @@ def summarize_harbor_job(
         task.execution_status == "completed" for task in tasks
     )
     benchmark_observations = sum(
-        task.benchmark_status in {"passed", "failed", "partial"}
+        task.execution_status == "completed"
+        and task.benchmark_status in {"passed", "failed", "partial"}
         for task in tasks
     )
-    benchmark_passes = sum(task.benchmark_status == "passed" for task in tasks)
+    benchmark_passes = sum(
+        task.execution_status == "completed"
+        and task.benchmark_status == "passed"
+        for task in tasks
+    )
 
     assurance: dict[str, object] = {
         "scope": "run-level",
@@ -197,7 +207,9 @@ def summarize_harbor_job(
             "benchmark_observations": benchmark_observations,
             "benchmark_passes": benchmark_passes,
             "benchmark_failures": sum(
-                task.benchmark_status == "failed" for task in tasks
+                task.execution_status == "completed"
+                and task.benchmark_status == "failed"
+                for task in tasks
             ),
             "execution_completion_rate": _rate(clean_executions, attempted),
             "benchmark_pass_rate": _rate(benchmark_passes, attempted),

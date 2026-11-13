@@ -226,6 +226,74 @@ class EvaluationTests(unittest.TestCase):
         self.assertNotIn("do not export", serialized)
         self.assertNotIn(str(job), serialized)
 
+    def test_job_summary_excludes_errored_reward_from_benchmark_metrics(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            job = Path(directory)
+            (job / "config.json").write_text(
+                json.dumps(
+                    {
+                        "datasets": [{"name": "terminal-bench", "version": "2.0"}],
+                        "agents": [
+                            {
+                                "name": "mini-swe-agent",
+                                "model_name": "anthropic/claude-opus-4-6",
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (job / "result.json").write_text(
+                json.dumps({"stats": {"cost_usd": 2.0}}),
+                encoding="utf-8",
+            )
+            completed = job / "completed-task"
+            completed.mkdir()
+            (completed / "result.json").write_text(
+                json.dumps(
+                    {
+                        "task_name": "completed-task",
+                        "task_id": {"git_commit_id": "public-task-revision"},
+                        "agent_result": {"cost_usd": 1.0},
+                        "verifier_result": {"rewards": {"reward": 1.0}},
+                        "exception_info": None,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            errored = job / "errored-task"
+            errored.mkdir()
+            (errored / "result.json").write_text(
+                json.dumps(
+                    {
+                        "task_name": "errored-task",
+                        "task_id": {"git_commit_id": "public-task-revision"},
+                        "agent_result": {"cost_usd": 1.0},
+                        "verifier_result": {"rewards": {"reward": 0.0}},
+                        "exception_info": {
+                            "exception_type": "AgentTimeoutError"
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            summary = summarize_harbor_job(job)
+
+        metrics = summary["metrics"]
+        self.assertEqual(metrics["attempted_tasks"], 2)
+        self.assertEqual(metrics["clean_executions"], 1)
+        self.assertEqual(metrics["benchmark_observations"], 1)
+        self.assertEqual(metrics["benchmark_passes"], 1)
+        self.assertEqual(metrics["benchmark_failures"], 0)
+        self.assertEqual(metrics["benchmark_observation_rate"], 1.0)
+        errored_task = next(
+            task for task in summary["tasks"] if task["task"] == "errored-task"
+        )
+        self.assertEqual(errored_task["benchmark_status"], "not-observed")
+        self.assertIsNone(errored_task["benchmark_score"])
+        self.assertEqual(errored_task["failure_class"], "agent-execution")
+
     def test_cohort_comparison_recomputes_public_results_and_task_deltas(self) -> None:
         comparison = compare_cohorts(Path("docs/cohort-comparison.toml"))
 
@@ -289,6 +357,43 @@ config = "config.toml"
             )
 
             with self.assertRaisesRegex(ValueError, "benchmark_passes"):
+                compare_cohorts(manifest)
+
+    def test_cohort_comparison_rejects_status_for_errored_task(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            result = root / "result.json"
+            config = root / "config.toml"
+            manifest = root / "manifest.toml"
+            shutil.copy("docs/results/codex-comparison-10-v3.json", result)
+            shutil.copy("config/codex-comparison-10-2.0.toml", config)
+            data = json.loads(result.read_text(encoding="utf-8"))
+            qemu = next(
+                task for task in data["tasks"] if task["task"] == "qemu-startup"
+            )
+            qemu["execution_status"] = "errored"
+            qemu["benchmark_status"] = "failed"
+            result.write_text(json.dumps(data), encoding="utf-8")
+            manifest.write_text(
+                """
+[comparison]
+id = "errored-task-status"
+benchmark = "terminal-bench"
+benchmark_revision = "2.0"
+task_set = "comparison-suite-10"
+task_set_revision = "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c"
+task_count = 10
+attempts_per_task = 1
+
+[[cohorts]]
+id = "codex"
+result = "result.json"
+config = "config.toml"
+""".strip(),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "non-completed execution"):
                 compare_cohorts(manifest)
 
 
