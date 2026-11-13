@@ -54,6 +54,15 @@ task-correctness failure, not an execution failure.
 The public-safe report is
 [mini-swe-agent-comparison-10-post-bridge-v1.json](results/mini-swe-agent-comparison-10-post-bridge-v1.json).
 
+The checked-in
+[cohort comparison report](results/cohort-comparison-v1.json) is a no-cost,
+offline reproducibility check across the original mini-swe-agent cohort, Codex,
+and the post-bridge mini-swe-agent cohort. It recomputes the metrics from the
+public task records and checks the benchmark revision, task-set revision,
+model/configuration, task count, and attempts before emitting task-level
+deltas. It does not add the follow-up to the original denominator or make a
+causal claim about the bridge.
+
 Claude Code was exercised during the study, but its provider-quota and evidence
 path interruptions prevented a fully comparable public ten-task result from
 being included here. Its runs remain documented in the
