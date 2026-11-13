@@ -121,7 +121,7 @@ class DockerShimTests(unittest.TestCase):
                 "#!/bin/sh\n"
                 'for arg in "$@"; do\n'
                 '  case "$arg" in\n'
-                '    /private/tmp/harbor-finch-secrets.*) printf "%s\\n" "$arg" > "$CAPTURED_ENV_FILE"; cp "$arg" "$COPIED_ENV_FILE" ;;\n'
+                '    */harbor-finch-secrets.*) printf "%s\\n" "$arg" > "$CAPTURED_ENV_FILE"; cp "$arg" "$COPIED_ENV_FILE" ;;\n'
                 '  esac\n'
                 "done\n",
                 encoding="utf-8",
