@@ -74,3 +74,55 @@ The instruction is versioned at
 `diagnostics/raman-unit-contract/extra-instruction.md`. Keep its receipt and
 any task-level files local; publish only the metadata-only summary after the
 run.
+
+## Post-bridge replication protocol
+
+The next paid study is a replication of the post-bridge mini-swe-agent cohort.
+Its question is whether the observed 10/10 clean executions and 9/10 benchmark
+passes recur under the same conditions. A replication is a repeated
+measurement under the same protocol; it is not a new leaderboard denominator
+and it does not prove that the bridge caused the earlier improvement.
+
+The replication keeps the following fixed:
+
+- the same ten public task names and Terminal-Bench 2.0 revision;
+- mini-swe-agent v2.4.6 and `anthropic/claude-opus-4-6`;
+- one attempt per task, one concurrent task, and the same Finch compatibility
+  path;
+- the existing argv-safe credential environment and metadata-only receipt
+  contract.
+
+Run the one-task smoke first. It is deliberately limited to `fix-git`, a
+small public task, with a declared $25 preflight ceiling:
+
+```text
+cd /Users/julielk/projects/harbor-assurance-adapter
+uv run harbor-assurance run --config config/mini-swe-agent-replication-smoke-2.0.toml --receipt runs/mini-swe-agent-replication-smoke-v1.receipt.json
+```
+
+Inspect the receipt before authorising the ten-task replication. Continue only
+if the smoke is a clean execution with a valid metadata-only receipt, no
+credential transport refusal, and no timeout or output-cap refusal. A clean
+smoke proves the selected path is available; it does not predict the cohort
+score.
+
+The ten-task replication reuses the pinned comparison configuration so the
+task set cannot drift:
+
+```text
+cd /Users/julielk/projects/harbor-assurance-adapter
+uv run harbor-assurance run --config config/mini-swe-agent-comparison-10-2.0.toml --receipt runs/mini-swe-agent-replication-10-v1.receipt.json
+```
+
+After the run, create its public-safe report:
+
+```text
+cd /Users/julielk/projects/harbor-assurance-adapter
+uv run harbor-assurance summarize-job --job JOB_DIRECTORY --receipt runs/mini-swe-agent-replication-10-v1.receipt.json --output docs/results/mini-swe-agent-replication-10-v1.json
+```
+
+Replace `JOB_DIRECTORY` with the local Harbor job directory. Do not publish
+the job directory, receipt, provider output, prompts, tool arguments, or raw
+trajectories. Add the report to a separate replication manifest only after it
+has been reviewed for task count, execution status, benchmark observation,
+assurance evidence, and observed cost.
