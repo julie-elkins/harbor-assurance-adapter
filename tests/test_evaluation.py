@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
 
+from harbor_assurance_adapter.cohort_comparison import compare_cohorts
 from harbor_assurance_adapter.evaluation import (
     ReceiptObservation,
     aggregate_receipts,
@@ -223,6 +225,71 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(summary["metrics"]["benchmark_failures"], 1)
         self.assertNotIn("do not export", serialized)
         self.assertNotIn(str(job), serialized)
+
+    def test_cohort_comparison_recomputes_public_results_and_task_deltas(self) -> None:
+        comparison = compare_cohorts(Path("docs/cohort-comparison.toml"))
+
+        self.assertEqual(comparison["schema_version"], "cohort-comparison-v1")
+        self.assertEqual(comparison["comparison"]["task_count"], 10)
+        cohorts = {cohort["id"]: cohort for cohort in comparison["cohorts"]}
+        self.assertEqual(cohorts["codex"]["metrics"]["benchmark_passes"], 7)
+        self.assertEqual(
+            cohorts["mini-swe-agent-original"]["metrics"]["clean_executions"],
+            9,
+        )
+        self.assertEqual(
+            cohorts["mini-swe-agent-post-bridge"]["metrics"]["benchmark_passes"],
+            9,
+        )
+        deltas = comparison["task_deltas_from_first_cohort"]
+        qemu = next(
+            delta
+            for delta in deltas
+            if delta["task"] == "qemu-startup" and delta["comparison"] == "codex"
+        )
+        self.assertEqual(qemu["benchmark_score_delta"], None)
+        self.assertEqual(qemu["execution_status"]["baseline"], "errored")
+        self.assertEqual(qemu["execution_status"]["comparison"], "completed")
+        gpt2 = next(
+            delta
+            for delta in deltas
+            if delta["task"] == "gpt2-codegolf"
+            and delta["comparison"] == "mini-swe-agent-post-bridge"
+        )
+        self.assertEqual(gpt2["benchmark_score_delta"], 1.0)
+
+    def test_cohort_comparison_refuses_tampered_aggregate(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            result = root / "result.json"
+            config = root / "config.toml"
+            manifest = root / "manifest.toml"
+            shutil.copy("docs/results/codex-comparison-10-v3.json", result)
+            shutil.copy("config/codex-comparison-10-2.0.toml", config)
+            data = json.loads(result.read_text(encoding="utf-8"))
+            data["metrics"]["benchmark_passes"] = 6
+            result.write_text(json.dumps(data), encoding="utf-8")
+            manifest.write_text(
+                """
+[comparison]
+id = "tampered"
+benchmark = "terminal-bench"
+benchmark_revision = "2.0"
+task_set = "comparison-suite-10"
+task_set_revision = "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c"
+task_count = 10
+attempts_per_task = 1
+
+[[cohorts]]
+id = "codex"
+result = "result.json"
+config = "config.toml"
+""".strip(),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "benchmark_passes"):
+                compare_cohorts(manifest)
 
 
 if __name__ == "__main__":

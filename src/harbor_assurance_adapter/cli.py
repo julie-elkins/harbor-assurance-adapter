@@ -12,6 +12,7 @@ from pathlib import Path
 from .aah import main as aah_main
 from .agent_trace import AgentTraceSummary, latest_agent_trace
 from .atif import AtifScanResult, latest_trajectory, scan_trajectory
+from .cohort_comparison import compare_cohorts
 from .evidence_summary import receipt_to_evidence_summary
 from .job_evaluation import summarize_harbor_job
 from .models import load_config
@@ -213,6 +214,30 @@ def _evidence_summary(args: argparse.Namespace) -> int:
     return 0
 
 
+def _compare_cohorts(args: argparse.Namespace) -> int:
+    try:
+        comparison = compare_cohorts(args.manifest)
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        print(
+            json.dumps(
+                {
+                    "status": "refused",
+                    "refusal_code": "cohort_metadata_invalid",
+                    "message": str(exc),
+                }
+            )
+        )
+        return 1
+    serialized = json.dumps(comparison, indent=2, sort_keys=True) + "\n"
+    if args.output is None:
+        print(serialized, end="")
+        return 0
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(serialized, encoding="utf-8")
+    print(json.dumps({"status": "written", "output": str(args.output)}))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Run a bounded Harbor command and project metadata into AAH."
@@ -245,6 +270,14 @@ def main(argv: list[str] | None = None) -> int:
     evidence_parser.add_argument("--receipt", type=Path, required=True)
     evidence_parser.add_argument("--output", type=Path)
     evidence_parser.set_defaults(handler=_evidence_summary)
+
+    comparison_parser = subparsers.add_parser(
+        "compare-cohorts",
+        help="validate and compare public multi-task cohort reports",
+    )
+    comparison_parser.add_argument("--manifest", type=Path, required=True)
+    comparison_parser.add_argument("--output", type=Path)
+    comparison_parser.set_defaults(handler=_compare_cohorts)
 
     aah_parser = subparsers.add_parser(
         "aah-adapter",

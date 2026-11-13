@@ -937,3 +937,41 @@ refused `v1` attempt.
 Review the publication branch, then merge it before drafting the external
 leaderboard or LinkedIn comment. Keep that comment draft-only until Julie
 chooses the final wording.
+
+## 2026-11-13 — Add the offline cohort comparator
+
+### Decision
+
+Add a local `compare-cohorts` command that validates the saved public
+`job-evaluation-v1` reports against their pinned configurations, recomputes
+execution and benchmark metrics from task records, and emits task-level deltas
+without making provider calls. Use the original mini-swe-agent cohort as the
+baseline so the post-bridge change is directly visible.
+
+### Instead of
+
+Manually copying aggregate values into a study table, comparing raw
+trajectories, or treating the post-bridge cohort as a new leaderboard
+denominator.
+
+### Why
+
+The public task summaries contain enough metadata to check reproducibility
+without exposing prompts, provider responses, credentials, or trajectories.
+Fail-closed validation catches stale aggregates, mismatched task-set
+revisions, model/config drift, and unequal task sets before a public result is
+used.
+
+### Verification
+
+The real manifest validated the original mini-swe-agent cohort, Codex, and the
+post-bridge mini-swe-agent cohort. The generated report preserves the known
+results: 9/10 clean and 6/10 passed for the original mini-swe-agent cohort,
+10/10 clean and 7/10 passed for Codex, and 10/10 clean and 9/10 passed for the
+post-bridge mini-swe-agent cohort. All 63 standard-library tests passed.
+
+### Next step
+
+Review the staged diff and publish the comparator, manifest, checked-in
+comparison report, tests, and documentation. Do not start another paid cohort
+until a distinct measurement question is defined.

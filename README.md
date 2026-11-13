@@ -51,6 +51,9 @@ that the execution evidence, evaluator, or recovery path was trustworthy.
   [comparison-runbook.md](docs/comparison-runbook.md).
 - Public per-task results are generated with the `summarize-job` command and
   stored under `docs/results/`.
+- Matched cohort comparisons are generated from those public result files with
+  the `compare-cohorts` command and the pinned
+  [cohort manifest](docs/cohort-comparison.toml).
 - Raw trajectories and process logs: local-only under `runs/`.
 - Public receipt: identifiers, versions, counts, statuses, digests, timing, and
   declared cost observations only.
@@ -267,6 +270,26 @@ receipt cannot manufacture assurance by omitting the underlying evidence.
 The checked-in synthetic contract fixture at
 `examples/evidence-summary/harbor-atif-v1.2.json` exercises the same public
 shape without a provider call.
+
+## Compare saved cohorts offline
+
+The cohort comparator is a local report tool: it reads only the checked-in
+public task summaries and pinned configuration files, so it makes no provider
+calls and adds no model cost. It recomputes the execution and benchmark
+denominators from the task records, checks that each cohort uses the declared
+benchmark, task-set revision, model, and configuration, and refuses to emit a
+comparison when those records disagree.
+
+```bash
+uv run harbor-assurance compare-cohorts \
+  --manifest docs/cohort-comparison.toml \
+  --output docs/results/cohort-comparison-v1.json
+```
+
+The report includes one metrics block per cohort and task-level deltas from the
+first cohort. A delta is a diagnostic comparison, not a causal attribution:
+the post-bridge mini-swe-agent cohort is a new provider execution and remains
+separate from the original denominator.
 
 ## Tests
 

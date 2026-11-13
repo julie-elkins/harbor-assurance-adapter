@@ -1,0 +1,387 @@
+{
+  "cohorts": [
+    {
+      "agent": "mini-swe-agent",
+      "assurance_checked": true,
+      "config": "mini-swe-agent-comparison-10-2.0.toml",
+      "id": "mini-swe-agent-original",
+      "metrics": {
+        "attempted_tasks": 10,
+        "benchmark_failures": 3,
+        "benchmark_observation_rate": 1.0,
+        "benchmark_observations": 9,
+        "benchmark_pass_rate": 0.6,
+        "benchmark_passes": 6,
+        "clean_executions": 9,
+        "conditional_benchmark_pass_rate": 0.6666666666666666,
+        "cost_observations": 9,
+        "execution_completion_rate": 0.9,
+        "observed_cost_usd": 16.182813
+      },
+      "model": "anthropic/claude-opus-4-6",
+      "runner_revision": null
+    },
+    {
+      "agent": "codex",
+      "assurance_checked": true,
+      "config": "codex-comparison-10-2.0.toml",
+      "id": "codex",
+      "metrics": {
+        "attempted_tasks": 10,
+        "benchmark_failures": 3,
+        "benchmark_observation_rate": 1.0,
+        "benchmark_observations": 10,
+        "benchmark_pass_rate": 0.7,
+        "benchmark_passes": 7,
+        "clean_executions": 10,
+        "conditional_benchmark_pass_rate": 0.7,
+        "cost_observations": 10,
+        "execution_completion_rate": 1.0,
+        "observed_cost_usd": 10.098631
+      },
+      "model": "openai/gpt-5.5",
+      "runner_revision": "0.167.0"
+    },
+    {
+      "agent": "mini-swe-agent",
+      "assurance_checked": true,
+      "config": "mini-swe-agent-comparison-10-2.0.toml",
+      "id": "mini-swe-agent-post-bridge",
+      "metrics": {
+        "attempted_tasks": 10,
+        "benchmark_failures": 1,
+        "benchmark_observation_rate": 1.0,
+        "benchmark_observations": 10,
+        "benchmark_pass_rate": 0.9,
+        "benchmark_passes": 9,
+        "clean_executions": 10,
+        "conditional_benchmark_pass_rate": 0.9,
+        "cost_observations": 10,
+        "execution_completion_rate": 1.0,
+        "observed_cost_usd": 16.530741
+      },
+      "model": "anthropic/claude-opus-4-6",
+      "runner_revision": null
+    }
+  ],
+  "comparison": {
+    "attempts_per_task": 1,
+    "benchmark": "terminal-bench",
+    "benchmark_revision": "2.0",
+    "cohort_count": 3,
+    "id": "terminal-bench-2.0-agent-assurance-2026",
+    "task_count": 10,
+    "task_set": "comparison-suite-10",
+    "task_set_revision": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c"
+  },
+  "schema_version": "cohort-comparison-v1",
+  "task_deltas_from_first_cohort": [
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 0.0,
+      "benchmark_status": {
+        "baseline": "passed",
+        "comparison": "passed"
+      },
+      "comparison": "codex",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": -0.584227,
+      "task": "break-filter-js-from-html"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 0.0,
+      "benchmark_status": {
+        "baseline": "passed",
+        "comparison": "passed"
+      },
+      "comparison": "codex",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": -0.644349,
+      "task": "cobol-modernization"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 0.0,
+      "benchmark_status": {
+        "baseline": "passed",
+        "comparison": "passed"
+      },
+      "comparison": "codex",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": 0.080308,
+      "task": "fix-code-vulnerability"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 0.0,
+      "benchmark_status": {
+        "baseline": "passed",
+        "comparison": "passed"
+      },
+      "comparison": "codex",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": 0.0172,
+      "task": "fix-git"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 1.0,
+      "benchmark_status": {
+        "baseline": "failed",
+        "comparison": "passed"
+      },
+      "comparison": "codex",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": -9.360264,
+      "task": "gpt2-codegolf"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": -1.0,
+      "benchmark_status": {
+        "baseline": "passed",
+        "comparison": "failed"
+      },
+      "comparison": "codex",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": 0.165315,
+      "task": "kv-store-grpc"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": null,
+      "benchmark_status": {
+        "baseline": "not-observed",
+        "comparison": "failed"
+      },
+      "comparison": "codex",
+      "execution_status": {
+        "baseline": "errored",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": null,
+      "task": "qemu-startup"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 0.0,
+      "benchmark_status": {
+        "baseline": "failed",
+        "comparison": "failed"
+      },
+      "comparison": "codex",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": 0.77056,
+      "task": "raman-fitting"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 0.0,
+      "benchmark_status": {
+        "baseline": "passed",
+        "comparison": "passed"
+      },
+      "comparison": "codex",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": 0.114028,
+      "task": "regex-log"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 1.0,
+      "benchmark_status": {
+        "baseline": "failed",
+        "comparison": "passed"
+      },
+      "comparison": "codex",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": 0.316319,
+      "task": "sanitize-git-repo"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 0.0,
+      "benchmark_status": {
+        "baseline": "passed",
+        "comparison": "passed"
+      },
+      "comparison": "mini-swe-agent-post-bridge",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": -0.448785,
+      "task": "break-filter-js-from-html"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 0.0,
+      "benchmark_status": {
+        "baseline": "passed",
+        "comparison": "passed"
+      },
+      "comparison": "mini-swe-agent-post-bridge",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": -0.259069,
+      "task": "cobol-modernization"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 0.0,
+      "benchmark_status": {
+        "baseline": "passed",
+        "comparison": "passed"
+      },
+      "comparison": "mini-swe-agent-post-bridge",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": -0.016954,
+      "task": "fix-code-vulnerability"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 0.0,
+      "benchmark_status": {
+        "baseline": "passed",
+        "comparison": "passed"
+      },
+      "comparison": "mini-swe-agent-post-bridge",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": -0.04018,
+      "task": "fix-git"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 1.0,
+      "benchmark_status": {
+        "baseline": "failed",
+        "comparison": "passed"
+      },
+      "comparison": "mini-swe-agent-post-bridge",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": -1.201969,
+      "task": "gpt2-codegolf"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 0.0,
+      "benchmark_status": {
+        "baseline": "passed",
+        "comparison": "passed"
+      },
+      "comparison": "mini-swe-agent-post-bridge",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": -0.014237,
+      "task": "kv-store-grpc"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": null,
+      "benchmark_status": {
+        "baseline": "not-observed",
+        "comparison": "passed"
+      },
+      "comparison": "mini-swe-agent-post-bridge",
+      "execution_status": {
+        "baseline": "errored",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": null,
+      "task": "qemu-startup"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 0.0,
+      "benchmark_status": {
+        "baseline": "failed",
+        "comparison": "failed"
+      },
+      "comparison": "mini-swe-agent-post-bridge",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": 0.349837,
+      "task": "raman-fitting"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 0.0,
+      "benchmark_status": {
+        "baseline": "passed",
+        "comparison": "passed"
+      },
+      "comparison": "mini-swe-agent-post-bridge",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": 0.062467,
+      "task": "regex-log"
+    },
+    {
+      "baseline": "mini-swe-agent-original",
+      "benchmark_score_delta": 1.0,
+      "benchmark_status": {
+        "baseline": "failed",
+        "comparison": "passed"
+      },
+      "comparison": "mini-swe-agent-post-bridge",
+      "execution_status": {
+        "baseline": "completed",
+        "comparison": "completed"
+      },
+      "observed_cost_delta_usd": 0.61134,
+      "task": "sanitize-git-repo"
+    }
+  ],
+  "validation": {
+    "provider_responses": "excluded",
+    "raw_trajectories": "excluded",
+    "secrets": "excluded",
+    "source": "public-job-evaluation-metadata",
+    "status": "passed"
+  }
+}
