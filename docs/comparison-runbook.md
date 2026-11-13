@@ -75,6 +75,32 @@ The instruction is versioned at
 any task-level files local; publish only the metadata-only summary after the
 run.
 
+## QEMU compatibility ablation
+
+The isolated QEMU diagnostic failed with a non-zero agent exit after the agent
+extracted the Alpine kernel but omitted the known Apple-Silicon `signalfd`
+compatibility shim from its final QEMU launch. The verifier could not reach the
+`localhost login:` prompt. This is an agent-execution diagnostic, not a
+benchmark score.
+
+The follow-up ablation makes that compatibility condition explicit through a
+versioned extra instruction. It keeps one task, one attempt, a declared $15
+ceiling, and a stop condition for timeout or output cap. It is not a benchmark
+repair and must not be added to a matched-cohort denominator:
+
+```text
+cd /Users/juliek/projects/harbor-assurance-adapter
+uv run harbor-assurance run --config config/mini-swe-agent-qemu-compatibility-ablation-2.0.toml --receipt runs/mini-swe-agent-qemu-compatibility-ablation-v1.receipt.json
+```
+
+The instruction is versioned at
+`diagnostics/qemu-compatibility/extra-instruction.md`. Keep the receipt,
+provider output, and trajectories local. Publish only a reviewed,
+metadata-only diagnostic summary. The first ablation reached the verifier
+successfully, but a later provider request failed for insufficient Anthropic
+credits, so the adapter records zero clean executions and zero benchmark
+observations. Do not retry until the provider balance is restored.
+
 ## Post-bridge replication protocol
 
 The next paid study is a replication of the post-bridge mini-swe-agent cohort.

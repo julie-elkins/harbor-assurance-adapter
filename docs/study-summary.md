@@ -118,6 +118,30 @@ See [mini-swe-agent-raman-unit-contract-ablation-v3.json](results/mini-swe-agent
 and the versioned
 [extra instruction](../diagnostics/raman-unit-contract/extra-instruction.md).
 
+### QEMU compatibility ablation
+
+We then ran one diagnostic-only `qemu-startup` ablation with the known
+Apple-Silicon QEMU compatibility condition made explicit. The verifier reached
+the Alpine login prompt and recorded reward `1.0`, but the agent made a later
+provider request after completing the task and Anthropic refused it because the
+credit balance was too low. Harbor therefore marked the overall execution as
+errored.
+
+The adapter correctly records this as:
+
+- clean execution: 0/1
+- benchmark observations: 0/1
+- observed cost: $1.128415
+
+This result supports the narrower finding that the QEMU environment can reach
+the verifier under the explicit compatibility instruction. It does not provide
+a clean benchmark observation or prove that the instruction alone caused the
+improvement, because provider-credit exhaustion confounded the run.
+
+See [mini-swe-agent-qemu-compatibility-ablation-v1.json](results/mini-swe-agent-qemu-compatibility-ablation-v1.json)
+and the versioned
+[extra instruction](../diagnostics/qemu-compatibility/extra-instruction.md).
+
 ### Post-hardening execution diagnostic
 
 The later mini-swe-agent diagnostic reached all ten terminal states, with
