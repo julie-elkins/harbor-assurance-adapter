@@ -1,0 +1,23 @@
+[comparison]
+id = "terminal-bench-2.0-agent-assurance-2026"
+benchmark = "terminal-bench"
+benchmark_revision = "2.0"
+task_set = "comparison-suite-10"
+task_set_revision = "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c"
+task_count = 10
+attempts_per_task = 1
+
+[[cohorts]]
+id = "mini-swe-agent-original"
+result = "results/mini-swe-agent-comparison-10-v3.json"
+config = "../config/mini-swe-agent-comparison-10-2.0.toml"
+
+[[cohorts]]
+id = "codex"
+result = "results/codex-comparison-10-v3.json"
+config = "../config/codex-comparison-10-2.0.toml"
+
+[[cohorts]]
+id = "mini-swe-agent-post-bridge"
+result = "results/mini-swe-agent-comparison-10-post-bridge-v1.json"
+config = "../config/mini-swe-agent-comparison-10-2.0.toml"

@@ -62,3 +62,22 @@ It excludes trial identifiers, local paths, prompts, tool arguments, provider
 responses, trajectories, and verifier output. Assurance metadata remains
 run-level because the receipt intentionally does not publish one assurance
 record per task.
+
+## Offline cohort comparison
+
+The `compare-cohorts` command compares saved `job-evaluation-v1` reports
+without making provider calls:
+
+```bash
+uv run harbor-assurance compare-cohorts \
+  --manifest docs/cohort-comparison.toml \
+  --output docs/results/cohort-comparison-v1.json
+```
+
+The manifest pins the benchmark revision, task-set revision, expected task
+count, attempts per task, result file, and source configuration for each
+cohort. The comparator recomputes counts and costs from the public task
+records and refuses to produce a report when a cohort's provenance,
+configuration, task set, or aggregate metrics do not match. This is a
+reproducibility check, not a new benchmark run and not causal evidence about
+why cohorts differ.
