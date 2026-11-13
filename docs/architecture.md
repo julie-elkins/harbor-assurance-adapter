@@ -87,6 +87,13 @@ advertise package versions it no longer serves. Newer images keep their
 normal package sources; the shim does not change the installed package set or
 rewrite unrelated APT commands.
 
+The QEMU compatibility ablation is kept separate from the matched profiles.
+On Apple Silicon, QEMU may require a temporary `LD_PRELOAD` shim for the
+`signalfd` syscall under x86_64 emulation. The diagnostic profile makes that
+condition explicit and requires process, port, and login-prompt checks before
+the agent claims readiness. It does not modify the benchmark task, verifier,
+or matched-cohort denominator.
+
 ## Provider credential boundary
 
 Provider credentials cross three local process boundaries: the adapter starts

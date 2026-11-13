@@ -1052,3 +1052,81 @@ offline cohort comparison remains byte-for-byte deterministic.
 Investigate `qemu-startup` separately with one bounded diagnostic, using the
 existing isolated setup-smoke path and preserving this replication as a
 non-clean result.
+
+## 2026-11-13 — Define the QEMU compatibility ablation
+
+### Decision
+
+Run one diagnostic-only `qemu-startup` ablation with the known Apple-Silicon
+QEMU compatibility condition made explicit: use a temporary `LD_PRELOAD` shim
+for the `signalfd` syscall when needed, launch the direct serial telnet
+endpoint, and verify process liveness, port 6665, and the Alpine login prompt
+before claiming readiness.
+
+### Instead of
+
+Changing the matched ten-task configuration, modifying the Terminal-Bench task
+or verifier, treating the failed diagnostic as a benchmark score, or rerunning
+the full cohort before isolating the execution hypothesis.
+
+### Why
+
+The baseline diagnostic reached agent execution and cost $0.882342, but the
+agent exited non-zero after launching QEMU without the compatibility condition
+that appeared in the earlier successful trajectory. The verifier then found no
+login prompt. A one-task extra-instruction ablation tests whether making that
+condition explicit changes execution reliability while preserving the original
+benchmark protocol.
+
+### Verification
+
+The new profile is pinned to one task, one attempt, a $15 declared ceiling,
+the argv-safe credential environment, and the metadata-only receipt path.
+Tests require the profile to reference the versioned diagnostic instruction,
+including `LD_PRELOAD` and `signalfd`. The result will remain outside all
+leaderboard-style denominators.
+
+### Next step
+
+Run the bounded ablation once. If it passes, classify the result as evidence
+that the explicit compatibility instruction matters; if it fails again,
+classify QEMU execution as unstable under this agent/environment pair and
+stop before any cohort rerun.
+
+## 2026-11-13 — QEMU verifier passed, provider execution failed
+
+### Decision
+
+Preserve the QEMU compatibility ablation as a non-clean diagnostic: the
+verifier reached reward `1.0`, but the overall agent execution is errored
+because Anthropic refused a later request for insufficient credit balance.
+Record zero clean executions and zero benchmark observations in the public-safe
+report, and stop further paid QEMU attempts until provider funding is restored.
+
+### Instead of
+
+Calling this a clean benchmark pass, treating the verifier reward as a normal
+observation, retrying immediately with the same exhausted provider balance, or
+rerunning the ten-task cohort.
+
+### Why
+
+The explicit compatibility instruction was present, and the verifier evidence
+shows that the QEMU environment reached the expected Alpine login state. But
+the agent process did not finish cleanly: the provider rejected a subsequent
+model request. Counting the reward would collapse task correctness and
+execution reliability into one number and would hide the provider failure.
+
+### Verification
+
+The metadata-only report records `execution_status = errored`,
+`benchmark_status = not-observed`, `failure_class = agent-execution`, and
+observed cost `$1.128415`. The underlying Harbor verifier recorded reward
+`1.0`; the adapter intentionally excludes it from benchmark observations
+because the execution was not clean.
+
+### Next step
+
+Restore Anthropic credit capacity before any additional paid run. After that,
+decide whether a single clean QEMU ablation is still worth funding; do not
+change the matched comparison denominator based on this diagnostic.

@@ -1,0 +1,40 @@
+{
+  "assurance": {
+    "assurance_source": "atif",
+    "atif_scan_status": "passed",
+    "scope": "run-level",
+    "status": "metadata-checked"
+  },
+  "metrics": {
+    "attempted_tasks": 1,
+    "benchmark_failures": 0,
+    "benchmark_observation_rate": 0.0,
+    "benchmark_observations": 0,
+    "benchmark_pass_rate": 0.0,
+    "benchmark_passes": 0,
+    "clean_executions": 0,
+    "conditional_benchmark_pass_rate": 0.0,
+    "execution_completion_rate": 0.0,
+    "observed_cost_usd": 1.128415
+  },
+  "provenance": {
+    "agent": "mini-swe-agent",
+    "benchmark": "terminal-bench",
+    "benchmark_revision": "2.0",
+    "model": "anthropic/claude-opus-4-6",
+    "runner_revision": null,
+    "source": "terminal-bench",
+    "task_set_revision": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c"
+  },
+  "schema_version": "job-evaluation-v1",
+  "tasks": [
+    {
+      "benchmark_score": null,
+      "benchmark_status": "not-observed",
+      "execution_status": "errored",
+      "failure_class": "agent-execution",
+      "observed_cost_usd": 1.128415,
+      "task": "qemu-startup"
+    }
+  ]
+}
