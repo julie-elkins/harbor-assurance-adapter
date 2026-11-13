@@ -1130,3 +1130,41 @@ because the execution was not clean.
 Restore Anthropic credit capacity before any additional paid run. After that,
 decide whether a single clean QEMU ablation is still worth funding; do not
 change the matched comparison denominator based on this diagnostic.
+
+## 2026-11-13 — QEMU compatibility ablation completed cleanly
+
+### Decision
+
+Record the funded `v2` QEMU compatibility ablation as a clean diagnostic:
+1/1 clean execution, 1/1 benchmark observation, 1/1 benchmark pass, and
+$0.806020 observed cost. Close the paid QEMU investigation and keep both
+ablations outside the matched-cohort and leaderboard denominators.
+
+### Instead of
+
+Rerunning the ten-task cohort, treating the two one-task ablations as a
+leaderboard score, or claiming that the extra instruction alone caused the
+difference between `v1` and `v2`.
+
+### Why
+
+The `v2` run used the same pinned task, model, environment hook, and explicit
+compatibility instruction as `v1`, but completed after provider credits were
+restored. The verifier passed, the QEMU process stayed alive, port 6665 was
+usable, and the login prompt was observed. The comparison is informative but
+not causal proof because `v1` was confounded by provider-credit exhaustion and
+agent behaviour can vary between runs.
+
+### Verification
+
+The metadata-only `v2` report records `clean_executions = 1`,
+`benchmark_observations = 1`, `benchmark_passes = 1`,
+`execution_completion_rate = 1.0`, `benchmark_observation_rate = 1.0`, and
+ATIF v1.2 metadata checked. The earlier `v1` report remains unchanged as
+non-clean evidence.
+
+### Next step
+
+Publish the `v2` report and close this diagnostic thread. Do not spend more
+provider credits on QEMU or rerun the ten-task cohort unless a new,
+pre-specified research question justifies the cost.
