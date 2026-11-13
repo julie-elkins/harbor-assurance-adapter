@@ -99,7 +99,21 @@ provider output, and trajectories local. Publish only a reviewed,
 metadata-only diagnostic summary. The first ablation reached the verifier
 successfully, but a later provider request failed for insufficient Anthropic
 credits, so the adapter records zero clean executions and zero benchmark
-observations. Do not retry until the provider balance is restored.
+observations.
+
+After provider credits were restored, the same bounded profile completed
+cleanly:
+
+```text
+cd /Users/juliek/projects/harbor-assurance-adapter
+uv run harbor-assurance run --config config/mini-swe-agent-qemu-compatibility-ablation-2.0.toml --receipt runs/mini-swe-agent-qemu-compatibility-ablation-v2.receipt.json
+```
+
+The `v2` result was 1/1 clean, 1/1 benchmark-observed, and 1/1 passed, at
+$0.806020 observed cost. It remains a diagnostic result, not a matched
+leaderboard observation. No additional paid QEMU or cohort runs are planned.
+The public-safe report is
+`docs/results/mini-swe-agent-qemu-compatibility-ablation-v2.json`.
 
 ## Post-bridge replication protocol
 

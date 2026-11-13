@@ -142,6 +142,20 @@ See [mini-swe-agent-qemu-compatibility-ablation-v1.json](results/mini-swe-agent-
 and the versioned
 [extra instruction](../diagnostics/qemu-compatibility/extra-instruction.md).
 
+We repeated the same bounded ablation after provider credits were restored:
+
+- clean execution: 1/1
+- benchmark observations: 1/1
+- benchmark passes: 1/1
+- observed cost: $0.806020
+
+The clean `v2` result supports the narrower conclusion that the explicit
+compatibility instruction can enable a successful QEMU execution under this
+agent and environment. It does not prove that the instruction alone caused
+the difference from `v1`, and neither ablation is a leaderboard result.
+
+See [mini-swe-agent-qemu-compatibility-ablation-v2.json](results/mini-swe-agent-qemu-compatibility-ablation-v2.json).
+
 ### Post-hardening execution diagnostic
 
 The later mini-swe-agent diagnostic reached all ten terminal states, with
