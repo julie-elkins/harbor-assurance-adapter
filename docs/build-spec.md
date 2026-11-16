@@ -57,6 +57,9 @@ a reproducible public evaluation record.
 The existing `mini-swe-agent-live-2.0.toml` profile is retained as the historical
 $25 pilot profile. The ESAC-Bench supervised smoke uses the separate
 `config/mini-swe-agent-esac-one-task-pilot-2.0.toml` profile: one public task,
-one attempt, a $5 declared ceiling, a 900-second timeout, and the existing
-262,144-byte output cap. The broader $100 pilot remains a later cap and is out
-of scope until this smoke receipt and AAH projection are reviewed.
+one attempt, a $5 declared ceiling, a 900-second outer timeout, and a
+675-second Harbor agent timeout. The inner budget leaves 225 seconds for
+environment setup, verification, and metadata receipt finalization. The
+existing 262,144-byte output cap remains in force. The broader $100 pilot
+remains a later cap and is out of scope until this smoke receipt and AAH
+projection are reviewed.

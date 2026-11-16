@@ -184,9 +184,10 @@ already been validated with one `terminal-bench@2.0` task.
 The historical live configuration is
 `config/mini-swe-agent-live-2.0.toml`. The supervised ESAC smoke uses the
 separate `config/mini-swe-agent-esac-one-task-pilot-2.0.toml` profile, which
-keeps one task and one attempt, declares a $5 estimate, and aligns the Harbor
-agent timeout with the 900-second outer timeout. The estimate is a
-stop-condition estimate, not a provider billing guarantee.
+keeps one task and one attempt, declares a $5 estimate, and gives Harbor a
+675-second inner agent timeout inside the 900-second outer adapter timeout.
+That leaves 225 seconds for setup, verification, and receipt finalization. The
+estimate is a stop-condition estimate, not a provider billing guarantee.
 
 The second comparison profile is
 `config/claude-code-live-2.0.toml`. Harbor installs Claude Code at the pinned
