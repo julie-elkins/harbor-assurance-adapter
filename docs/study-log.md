@@ -1193,3 +1193,32 @@ The new profile validates with the existing configuration loader and keeps the
 same pinned benchmark, model, credential allow-list, Docker environment hook,
 one-attempt setting, and metadata-only receipt boundary. The smoke remains
 outside matched-cohort and leaderboard denominators.
+
+## 2026-11-16 — ESAC nested timeout correction
+
+### Decision
+
+Set the ESAC pilot's Harbor agent timeout multiplier to `0.75`, giving the
+agent 675 seconds inside the 900-second ESAC adapter bound.
+
+### Instead of
+
+Keeping Harbor's 900-second inner timeout equal to the adapter's 900-second
+outer timeout, increasing the outer timeout, or starting another live smoke
+with the same profile.
+
+### Why
+
+The `v3` smoke showed approximately 45 seconds of setup before agent
+execution, followed by Harbor's full 900-second agent timeout. Harbor then
+needed additional time to run the verifier and finalize its job receipt. The
+outer adapter timed out first, leaving its metadata receipt incomplete even
+though Harbor later recorded an `AgentTimeoutError`, reward `0.0`, and
+reported cost `$1.85729125`.
+
+### Verification
+
+The pilot profile now leaves 225 seconds between the inner agent budget and
+the outer adapter bound. The configuration test pins the `0.75` multiplier,
+and the public build specification documents the nested budget. The next
+smoke remains a single supervised task and is not a leaderboard observation.

@@ -154,7 +154,7 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(run_config.budget.timeout_seconds, 900.0)
         command = list(run_config.command)
         index = command.index("--agent-timeout-multiplier")
-        self.assertEqual(command[index + 1], "1")
+        self.assertEqual(command[index + 1], "0.75")
 
     def test_config_rejects_literal_provider_secret_arguments(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
