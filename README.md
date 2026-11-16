@@ -189,6 +189,12 @@ keeps one task and one attempt, declares a $5 estimate, and gives Harbor a
 That leaves 225 seconds for setup, verification, and receipt finalization. The
 estimate is a stop-condition estimate, not a provider billing guarantee.
 
+The clean-completion diagnostic uses the separate
+`config/mini-swe-agent-esac-regex-log-pilot-2.0.toml` profile. It selects
+`regex-log` explicitly because earlier public mini-swe-agent records completed
+and passed that task; it is a new diagnostic task selection, not a retry of
+`gpt2-codegolf` and not part of the matched-cohort denominator.
+
 The second comparison profile is
 `config/claude-code-live-2.0.toml`. Harbor installs Claude Code at the pinned
 2.1.319 release, limits the agent to a declared $15 per-task budget, and emits

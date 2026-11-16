@@ -1222,3 +1222,31 @@ The pilot profile now leaves 225 seconds between the inner agent budget and
 the outer adapter bound. The configuration test pins the `0.75` multiplier,
 and the public build specification documents the nested budget. The next
 smoke remains a single supervised task and is not a leaderboard observation.
+
+## 2026-11-16 — Explicit clean-completion diagnostic task
+
+### Decision
+
+Create a separate one-task profile that selects `regex-log` explicitly, keeps
+one attempt and a $5 declared ceiling, and reuses the 675-second inner /
+900-second outer timeout budget.
+
+### Instead of
+
+Rerunning `gpt2-codegolf`, leaving Harbor free to select the first dataset task,
+or increasing the timeout until the difficult task passes.
+
+### Why
+
+Earlier public mini-swe-agent records show clean completion and benchmark
+passes for `regex-log`, while the ESAC smoke needs a separate success-path
+check after the adapter and timeout controls were repaired. Explicit task
+selection makes the new question reproducible and keeps it outside the
+matched-cohort denominator.
+
+### Verification
+
+The new profile pins one task, one attempt, the Anthropic credential
+allow-list, the Docker environment hook, the 675-second inner timeout, and the
+900-second outer bound. The next result will be classified separately from
+the `gpt2-codegolf` diagnostic and the published ten-task cohorts.

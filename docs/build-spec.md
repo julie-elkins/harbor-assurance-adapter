@@ -63,3 +63,10 @@ environment setup, verification, and metadata receipt finalization. The
 existing 262,144-byte output cap remains in force. The broader $100 pilot
 remains a later cap and is out of scope until this smoke receipt and AAH
 projection are reviewed.
+
+The follow-up clean-completion diagnostic uses
+`config/mini-swe-agent-esac-regex-log-pilot-2.0.toml`. It selects one public
+`regex-log` task explicitly, keeps one attempt and the same $5 declared
+ceiling, and uses the same 675-second inner / 900-second outer timeout budget.
+This diagnostic is separate from the matched cohort and does not change any
+leaderboard-style denominator.
