@@ -156,6 +156,22 @@ class AdapterTests(unittest.TestCase):
         index = command.index("--agent-timeout-multiplier")
         self.assertEqual(command[index + 1], "0.75")
 
+    def test_esac_regex_log_pilot_selects_one_bounded_task(self) -> None:
+        repository = Path(__file__).parents[1]
+        run_config = load_config(
+            repository / "config" / "mini-swe-agent-esac-regex-log-pilot-2.0.toml"
+        )
+
+        self.assertEqual(run_config.budget.max_total_cost_usd, 5.0)
+        self.assertEqual(run_config.budget.task_count, 1)
+        self.assertEqual(run_config.budget.attempts, 1)
+        self.assertEqual(run_config.budget.timeout_seconds, 900.0)
+        command = list(run_config.command)
+        include_index = command.index("--include-task-name")
+        self.assertEqual(command[include_index + 1], "regex-log")
+        timeout_index = command.index("--agent-timeout-multiplier")
+        self.assertEqual(command[timeout_index + 1], "0.75")
+
     def test_config_rejects_literal_provider_secret_arguments(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "secret.toml"
