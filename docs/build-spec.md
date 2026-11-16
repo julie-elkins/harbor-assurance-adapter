@@ -54,6 +54,9 @@ a reproducible public evaluation record.
 
 ## Pilot stop condition
 
-The first live pilot is one public task, one attempt, and a $25 declared ceiling.
-The broader $100 pilot remains a later cap: $25 smoke validation followed by up to
-$75 only after the smoke receipt and AAH projection are reviewed.
+The existing `mini-swe-agent-live-2.0.toml` profile is retained as the historical
+$25 pilot profile. The ESAC-Bench supervised smoke uses the separate
+`config/mini-swe-agent-esac-one-task-pilot-2.0.toml` profile: one public task,
+one attempt, a $5 declared ceiling, a 900-second timeout, and the existing
+262,144-byte output cap. The broader $100 pilot remains a later cap and is out
+of scope until this smoke receipt and AAH projection are reviewed.

@@ -141,6 +141,21 @@ class AdapterTests(unittest.TestCase):
             index = command.index("--agent-timeout-multiplier")
             self.assertEqual(command[index + 1], "4")
 
+    def test_esac_one_task_pilot_is_tightly_bounded(self) -> None:
+        repository = Path(__file__).parents[1]
+        run_config = load_config(
+            repository / "config" / "mini-swe-agent-esac-one-task-pilot-2.0.toml"
+        )
+
+        self.assertEqual(run_config.budget.max_total_cost_usd, 5.0)
+        self.assertEqual(run_config.budget.estimated_cost_per_task_usd, 5.0)
+        self.assertEqual(run_config.budget.task_count, 1)
+        self.assertEqual(run_config.budget.attempts, 1)
+        self.assertEqual(run_config.budget.timeout_seconds, 900.0)
+        command = list(run_config.command)
+        index = command.index("--agent-timeout-multiplier")
+        self.assertEqual(command[index + 1], "1")
+
     def test_config_rejects_literal_provider_secret_arguments(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "secret.toml"

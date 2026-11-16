@@ -1168,3 +1168,28 @@ non-clean evidence.
 Publish the `v2` report and close this diagnostic thread. Do not spend more
 provider credits on QEMU or rerun the ten-task cohort unless a new,
 pre-specified research question justifies the cost.
+
+## 2026-11-16 — ESAC one-task pilot profile
+
+### Decision
+
+Create a separate `mini-swe-agent-esac-one-task-pilot-2.0.toml` profile with
+one task, one attempt, a $5 declared ceiling, and a 900-second timeout.
+
+### Instead of
+
+Changing the historical `mini-swe-agent-live-2.0.toml` profile, which declares
+a $25 ceiling and a 3600-second timeout.
+
+### Why
+
+The ESAC smoke has a narrower approved purpose and budget than the earlier live
+pilot. A separate profile preserves reproducibility for prior runs while
+aligning the new smoke's inner Harbor limits with its outer adapter limits.
+
+### Verification
+
+The new profile validates with the existing configuration loader and keeps the
+same pinned benchmark, model, credential allow-list, Docker environment hook,
+one-attempt setting, and metadata-only receipt boundary. The smoke remains
+outside matched-cohort and leaderboard denominators.

@@ -181,12 +181,11 @@ The real smoke run still requires a locally configured provider credential and
 exact `model` and `provider` identifiers. The no-model Harbor/Finch path has
 already been validated with one `terminal-bench@2.0` task.
 
-The prepared live configuration is
-`config/mini-swe-agent-live-2.0.toml`. It passes only `ANTHROPIC_API_KEY` to
-the Harbor subprocess and limits the first paid run to one task and one attempt.
-It also sets Harbor's agent-timeout multiplier to `4`: Harbor's default
-900-second agent limit becomes 3600 seconds, matching the adapter's declared
-wall-clock budget. The $5 estimate is deliberately conservative; it is a
+The historical live configuration is
+`config/mini-swe-agent-live-2.0.toml`. The supervised ESAC smoke uses the
+separate `config/mini-swe-agent-esac-one-task-pilot-2.0.toml` profile, which
+keeps one task and one attempt, declares a $5 estimate, and aligns the Harbor
+agent timeout with the 900-second outer timeout. The estimate is a
 stop-condition estimate, not a provider billing guarantee.
 
 The second comparison profile is
