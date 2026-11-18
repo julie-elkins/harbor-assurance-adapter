@@ -11,6 +11,35 @@ The benchmark score answers the first question. AAH metadata answers the
 second. Neither result is a claim that the agent's reasoning or tool choices
 were semantically safe.
 
+## New benchmark created: ESAC-Bench
+
+This work also produced
+[ESAC-Bench](https://github.com/julie-elkins/esac-bench), a new
+provider-neutral benchmark for testing whether an agent's completion claim is
+supported after interruption, recovery, or handoff. It reports four separate
+dimensions:
+
+- outcome: whether the task verifier accepted the result;
+- recovery safety: whether interruption or handoff caused duplicate or missing
+  effects;
+- evidence completeness: whether the required evidence was present; and
+- claim support: whether the final completion claim was justified.
+
+The initial ESAC-Bench release is an offline, deterministic reference benchmark
+with six synthetic task contracts and controlled mutations. The Harbor
+comparison and the bounded `regex-log` runs are calibration diagnostics for
+this benchmark, not ESAC-Bench scores or a new provider leaderboard.
+See the [ESAC-Bench specification](https://github.com/julie-elkins/esac-bench/blob/main/docs/benchmark-spec.md)
+and [repository](https://github.com/julie-elkins/esac-bench).
+
+ESAC-Bench now also has a separate
+[Recovery Track](https://github.com/julie-elkins/esac-bench/blob/main/docs/benchmark-spec.md#recovery-track)
+with seven synthetic interruption, retry, restore, checkpoint, handoff, and
+evidence-completeness cases. It reports final-state restoration, side-effect
+integrity, recovery-evidence completeness, and bounded recovery separately.
+The Harbor runs in this study remain calibration diagnostics; they are not
+Recovery Track scores.
+
 ## Matched comparison results
 
 A **matched cohort** means the agents used the same ten public
@@ -165,6 +194,29 @@ provider-quota signal. This is execution-reliability evidence, not an 8/10
 accuracy result.
 
 See [mini-swe-agent-comparison-10-v4.json](results/mini-swe-agent-comparison-10-v4.json).
+
+### Bounded success-path replication
+
+After the Harbor adapter and the ESAC-Bench metadata boundary were published,
+we ran the explicitly selected `regex-log` task twice as a bounded diagnostic.
+The second run used a refreshed provider credential; neither run changed the
+model, task, or ten-task comparison denominator:
+
+| Diagnostic | Executions | Benchmark observations | Passes | Evidence | Observed cost |
+| --- | ---: | ---: | ---: | --- | ---: |
+| `regex-log` v1 | 1/1 | 1/1 | 1/1 | complete; trajectory present | $0.40285075 |
+| `regex-log` v2 | 1/1 | 1/1 | 1/1 | complete; trajectory present | $0.45102025 |
+
+Both provider receipts passed the offline metadata-only Harbor evaluator and
+recorded validated ATIF v1.2 metadata. The two passes support the narrower
+claim that this bounded success path completed twice with complete evidence
+under the tested configuration. They do not establish general agent
+reliability, model improvement, or a leaderboard result: two runs of one
+selected task are not a matched ten-task cohort.
+
+The diagnostic is recorded in the
+[ESAC-Bench build log](https://github.com/julie-elkins/esac-bench/blob/main/docs/build-log.md)
+and remains outside all native ESAC and leaderboard-style denominators.
 
 ## Assurance finding
 

@@ -1250,3 +1250,47 @@ The new profile pins one task, one attempt, the Anthropic credential
 allow-list, the Docker environment hook, the 675-second inner timeout, and the
 900-second outer bound. The next result will be classified separately from
 the `gpt2-codegolf` diagnostic and the published ten-task cohorts.
+
+## 2026-11-16 — Replicate the bounded regex-log success path
+
+### Decision
+
+Publish `esac-harbor-live-regex-log-v1` and
+`esac-harbor-live-regex-log-v2` as two clean one-task diagnostic runs:
+one completed execution, one benchmark observation, one benchmark pass, and
+complete trajectory evidence in each run. Keep both outside the native ESAC
+and leaderboard-style denominators.
+
+### Instead of
+
+Treating the refreshed-key run as evidence of model improvement, adding the
+two passes to the ten-task comparison, or spending more provider credits on
+another repeat without a new pre-specified question.
+
+### Why
+
+The v1 and v2 provider receipts both passed the offline metadata-only Harbor
+evaluator and recorded validated ATIF v1.2 metadata. The observed costs were
+`$0.40285075` and `$0.45102025`. This confirms that the explicitly selected
+`regex-log` success path completed twice under the tested configuration, while
+the single-task sample cannot support a general reliability claim.
+
+### Costs if wrong
+
+Omitting the replication would hide useful evidence that the bounded success
+path worked after credential refresh. Counting it as cohort evidence would
+overstate a two-run, one-task diagnostic and blur the difference between
+execution plumbing and model performance.
+
+### Decided by
+
+Julie and Codex on 2026-11-16.
+
+### Verification
+
+- v1 and v2 each record `1/1` clean execution, `1/1` benchmark observation,
+  and `1/1` benchmark pass.
+- Both records have complete evidence and a present trajectory.
+- The public update contains no credentials, prompts, provider responses, raw
+  trajectories, or local run artifacts.
+- The ESAC-Bench build log records the same diagnostic and limitations.
